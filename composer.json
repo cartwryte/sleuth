@@ -1,7 +1,7 @@
 {
     "name": "cartwryte/sleuth",
     "description": "The Cartwryte Sleuth: a reactive error handler that investigates issues and provides clues for OpenCart development.",
-    "type": "library",
+    "type": "composer-plugin",
     "license": "MIT",
     "keywords": ["opencart", "error-handling", "debugging", "exceptions", "sleuth", "dev-tools"],
     "authors": [
@@ -10,13 +10,36 @@
             "email": "20430159+trydalcoholic@users.noreply.github.com"
         }
     ],
+    "homepage": "https://cartwryte.dev",
+    "support": {
+        "issues": "https://github.com/cartwryte/sleuth/issues",
+        "source": "https://github.com/cartwryte/sleuth"
+    },
     "require": {
-        "php": "^8.0"
+        "php": "^8.0",
+        "composer-plugin-api": "^2.6"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.84",
+        "composer/composer": "^2.8"
     },
     "autoload": {
         "psr-4": {
             "Cartwryte\\Sleuth\\": "src/"
         }
+    },
+    "scripts": {
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff"
+    },
+    "extra": {
+        "class": "Cartwryte\\Sleuth\\Installer\\ComposerInstaller"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "suggest": {
+        "opencart/opencart": "^4.1.0 Required OpenCart framework"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
