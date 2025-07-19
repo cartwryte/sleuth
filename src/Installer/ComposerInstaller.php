@@ -35,7 +35,6 @@ use Exception;
 final class ComposerInstaller implements EventSubscriberInterface, PluginInterface
 {
   private Composer $composer;
-  private IOInterface $io;
 
   /**
    * Returns the events this plugin subscribes to.
@@ -62,7 +61,6 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
   public function activate(Composer $composer, IOInterface $io): void
   {
     $this->composer = $composer;
-    $this->io = $io;
   }
 
   /**

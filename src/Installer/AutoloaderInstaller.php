@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Installer;
 
 use Cartwryte\Sleuth\Exception\OpenCartNotDetectedException;
+use Cartwryte\Sleuth\Helper\FileHelper;
 
 /**
  * Autoloader Installer for Cartwryte Sleuth in OpenCart.
@@ -50,7 +51,7 @@ final class AutoloaderInstaller
       return false;
     }
 
-    $content = file_get_contents($vendorFile);
+    $content = FileHelper::readFileContent($vendorFile);
 
     return str_contains($content, '// Cartwryte Sleuth');
   }
@@ -68,7 +69,7 @@ final class AutoloaderInstaller
     $vendorFile = $paths['system'] . '/vendor.php';
 
     if (!file_exists($vendorFile)) {
-      throw new OpenCartNotDetectedException("vendor.php not found: {$vendorFile}");
+      throw new OpenCartNotDetectedException("vendor.php not found: $vendorFile");
     }
 
     // guard: don't patch twice
@@ -76,8 +77,9 @@ final class AutoloaderInstaller
       return false;
     }
 
-    $orig = file_get_contents($vendorFile);
-    $lines = preg_split('/\R/', $orig);
+    $lines = FileHelper::splitIntoLines(
+      FileHelper::readFileContent($vendorFile),
+    );
 
     // insert at the end
     $lines[] = '';
@@ -109,9 +111,11 @@ final class AutoloaderInstaller
       return $this->backupManager->restore($vendorFile);
     }
 
-    $content = file_get_contents($vendorFile);
+    $content = FileHelper::readFileContent($vendorFile);
+
     $pattern = "/^\\s*\\/\\/ Cartwryte Sleuth\n"
         . "\$autoloader->register\\('Cartwryte\\\\Sleuth'.*;\n/m";
+
     $new = preg_replace($pattern, '', $content);
 
     return !is_null($new) && file_put_contents($vendorFile, $new) !== false;

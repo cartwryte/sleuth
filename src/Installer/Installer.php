@@ -112,11 +112,8 @@ final class Installer
         $report['steps'][] = 'All backups removed';
       }
 
-      $report['success'] = empty($report['errors']);
-
-      if ($report['success']) {
-        $report['steps'][] = 'Uninstallation completed successfully';
-      }
+      $report['success'] = true;
+      $report['steps'][] = 'Uninstallation completed successfully';
     } catch (Exception $e) {
       $report['errors'][] = $e->getMessage();
       $report['steps'][] = 'Uninstallation failed: ' . $e->getMessage();

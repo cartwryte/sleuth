@@ -24,7 +24,13 @@ use Cartwryte\Sleuth\Helper\PathHelper;
 final class OpenCartDetector
 {
   private string $rootPath;
+  /**
+   * @var array{version: string, source: string}|null
+   */
   private ?array $versionInfo = null;
+  /**
+   * @var array{root: string, upload: string, system: string, config: string, framework: string, vendor: string, loader: string}|null
+   */
   private ?array $pathsCache = null;
 
   /**
@@ -88,6 +94,8 @@ final class OpenCartDetector
 
   /**
    * @throws OpenCartNotDetectedException
+   *
+   * @return array{version: string, source: string}
    */
   public function getVersionInfo(): array
   {
@@ -95,14 +103,19 @@ final class OpenCartDetector
       return $this->versionInfo;
     }
 
-    $this->versionInfo = [];
     $this->detectFromIndexFiles();
+
+    if (is_null($this->versionInfo)) {
+      throw new OpenCartNotDetectedException('Failed to detect version info');
+    }
 
     return $this->versionInfo;
   }
 
   /**
    * @throws OpenCartNotDetectedException
+   *
+   * @return array{root: string, upload: string, system: string, config: string, framework: string, vendor: string, loader: string}
    */
   public function getPaths(): array
   {
@@ -143,34 +156,51 @@ final class OpenCartDetector
     ];
 
     foreach ($candidates as $file) {
-      if (is_file($file)) {
-        $this->parseVersionFromFile($file);
-        $this->versionInfo['source'] = basename($file);
+      if (!is_file($file)) {
+        continue;
+      }
 
+      try {
+        $version = $this->parseVersionFromFile($file);
+        $this->versionInfo = [
+          'version' => $version,
+          'source' => basename($file),
+        ];
+
+        // Version found, exit the method
         return;
+      } catch (OpenCartNotDetectedException $e) {
+        // Version not found in this file, try the next one
+        continue;
       }
     }
 
-    throw new OpenCartNotDetectedException("index.php not found in $this->rootPath");
+    throw new OpenCartNotDetectedException("Could not detect OpenCart version from any candidate file in '$this->rootPath'");
   }
 
   /**
    * @param string $file
    *
    * @throws OpenCartNotDetectedException
+   *
+   * @return string The detected version string
    */
-  private function parseVersionFromFile(string $file): void
+  private function parseVersionFromFile(string $file): string
   {
     $content = file_get_contents($file, false, null, 0, 32768) ?: '';
 
-    if (!preg_match(
-      "/define\\s*\\(\\s*['\"]VERSION['\"]\\s*,\\s*['\"]([^'\"]+)['\"]\\s*\\)/",
-      $content,
-      $m,
-    )) {
+    $matches = [];
+
+    if (
+      !preg_match(
+        "/define\\s*\\(\\s*['\"]VERSION['\"]\\s*,\\s*['\"]([^'\"]+)['\"]\\s*\\)/",
+        $content,
+        $matches,
+      )
+    ) {
       throw new OpenCartNotDetectedException("VERSION constant not found in $file");
     }
 
-    $this->versionInfo['version'] = $m[1];
+    return $matches[1];
   }
 }

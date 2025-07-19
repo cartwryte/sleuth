@@ -241,6 +241,42 @@ final class FileHelper
   }
 
   /**
+   * Safely read file content with error handling.
+   *
+   * @param string $filePath
+   *
+   * @return string
+   */
+  public static function readFileContent(string $filePath): string
+  {
+    $content = file_get_contents($filePath);
+
+    if ($content === false) {
+      throw new RuntimeException("Cannot read file: $filePath");
+    }
+
+    return $content;
+  }
+
+  /**
+   * Split content into lines safely.
+   *
+   * @param string $content
+   *
+   * @return string[]
+   */
+  public static function splitIntoLines(string $content): array
+  {
+    $lines = preg_split('/\R/', $content);
+
+    if ($lines === false) {
+      throw new RuntimeException('Failed to split content into lines');
+    }
+
+    return $lines;
+  }
+
+  /**
    * Calculate the depth change of curly braces in a line.
    *
    * @param string $line Line to analyze

@@ -162,7 +162,7 @@ final class ConfigPatcher
       throw new OpenCartNotDetectedException("default.php config not found: $configFile");
     }
 
-    $content = file_get_contents($configFile);
+    $content = FileHelper::readFileContent($configFile);
 
     if (str_contains($content, '// Development (added by Cartwryte Sleuth)')) {
       return false;
@@ -206,7 +206,7 @@ final class ConfigPatcher
       throw new OpenCartNotDetectedException("$type.php config not found: $configFile");
     }
 
-    $content = file_get_contents($configFile);
+    $content = FileHelper::readFileContent($configFile);
 
     if (str_contains($content, "//'startup/error',")) {
       return false;
@@ -238,7 +238,7 @@ final class ConfigPatcher
       return false;
     }
 
-    $content = file_get_contents($configFile);
+    $content = FileHelper::readFileContent($configFile);
 
     // Look for lines commented out by us
     $pattern = "/^(\\s*)\\/\\/\\s*'startup\\/error',\\s*\\/\\/\\s*Cartwryte Sleuth disabled/m";
@@ -270,14 +270,14 @@ final class ConfigPatcher
       throw new OpenCartNotDetectedException("vendor.php not found: {$vendorFile}");
     }
 
-    $orig = file_get_contents($vendorFile);
+    $orig = FileHelper::readFileContent($vendorFile);
 
     // guard: don't patch twice
     if (str_contains($orig, '// Cartwryte Sleuth')) {
       return false;
     }
 
-    $lines = preg_split('/\R/', $orig);
+    $lines = FileHelper::splitIntoLines($orig);
 
     // add to the end
     $lines[] = '';
@@ -304,7 +304,8 @@ final class ConfigPatcher
    */
   private function unpatchVendorRegistration(string $vendorFile): bool
   {
-    $content = file_get_contents($vendorFile);
+    $content = FileHelper::readFileContent($vendorFile);
+
     $snippet = "\n// Cartwryte Sleuth\n"
         . "\$autoloader->register(\n"
         . "    'Cartwryte\\\\Sleuth',\n"
@@ -320,50 +321,5 @@ final class ConfigPatcher
     }
 
     return false;
-  }
-
-  /**
-   * Comments out an anonymous-function block started by $fnName(
-   * until the matching closing ');'. Works line-by-line.
-   *
-   * @param string[] $lines  Input lines
-   * @param string   $fnName 'set_error_handler' or 'set_exception_handler'
-   *
-   * @return array{0:string[],1:bool} [newLines, wasChanged]
-   */
-  private function commentOutBlock(array $lines, string $fnName): array
-  {
-    $out = [];
-    $inBlock = false;
-    $depth = 0;
-    $changed = false;
-    $pattern = '/^\s*' . preg_quote($fnName, '/') . '\s*\(/';
-
-    foreach ($lines as $line) {
-      if (!$inBlock) {
-        if (preg_match($pattern, $line)) {
-          // entering block - comment out this line
-          $inBlock = true;
-          // level of curly braces in this line
-          $depth = substr_count($line, '{') - substr_count($line, '}');
-          $out[] = '// ' . $line;
-          $changed = true;
-        } else {
-          $out[] = $line;
-        }
-      } else {
-        // already inside block - comment out and count nesting
-        $depth += substr_count($line, '{') - substr_count($line, '}');
-        $out[] = '// ' . $line;
-        $changed = true;
-
-        // if all { } are closed, and we found block ending ');'
-        if ($depth <= 0 && str_contains($line, ');')) {
-          $inBlock = false;
-        }
-      }
-    }
-
-    return [$out, $changed];
   }
 }
