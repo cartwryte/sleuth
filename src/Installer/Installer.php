@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Installer;
 
 use Cartwryte\Sleuth\Exception\OpenCartNotDetectedException;
-use Cartwryte\Sleuth\Exception\UnsupportedVersionException;
 use Exception;
+use RuntimeException;
 
 /**
  * Orchestrates the installation and uninstallation of Cartwryte Sleuth.
@@ -64,7 +64,22 @@ final class Installer
     ];
 
     try {
-      $this->validateInstallation($report);
+      // We get the version directly. This method will throw an exception
+      // if it can't read 'index.php' or find the version constant inside.
+      // This is a much more reliable check than is_file('.../framework.php').
+      $version = $this->detector->getVersion();
+      $majorVersion = $this->detector->getMajorVersion();
+
+      $report['version'] = $version;
+      $report['steps'][] = "Detected OpenCart version: {$version}";
+
+      // You can keep the version support check
+      if (!in_array($majorVersion, [3, 4], true)) {
+        throw new RuntimeException("Unsupported OpenCart version: {$version}");
+      }
+
+      $report['steps'][] = "OpenCart version {$version} is supported";
+
       $this->installAutoloader($report);
       $this->applyPatches($report);
       $this->initializeErrorHandler($report);
@@ -167,33 +182,6 @@ final class Installer
         'error' => $e->getMessage(),
       ];
     }
-  }
-
-  /**
-   * Validates OpenCart installation and version support.
-   *
-   * @param array<string,mixed>& $report Reference to the report to append steps
-   *
-   * @throws OpenCartNotDetectedException if OpenCart is not detected
-   * @throws UnsupportedVersionException  if OpenCart version is not supported
-   */
-  private function validateInstallation(array &$report): void
-  {
-    if (!$this->detector->isOpenCart()) {
-      throw new OpenCartNotDetectedException('OpenCart installation not detected');
-    }
-
-    $version = $this->detector->getVersion();
-    $majorVersion = $this->detector->getMajorVersion();
-
-    $report['version'] = $version;
-    $report['steps'][] = "Detected OpenCart version: {$version}";
-
-    if (!in_array($majorVersion, [3, 4], true)) {
-      throw new UnsupportedVersionException("Unsupported OpenCart version: {$version}");
-    }
-
-    $report['steps'][] = "OpenCart version {$version} is supported";
   }
 
   /**

@@ -47,13 +47,21 @@ final class PathHelper
       return '';
     }
 
-    $first = rtrim($segments[0], '/\\');
+    // Process all segments to remove leading/trailing slashes from each part.
+    $parts = array_map(static fn (string $seg): string => trim($seg, '/\\'), $segments);
 
-    foreach ($segments as $seg) {
-      $first .= DIRECTORY_SEPARATOR . trim($seg, '/\\');
+    // Filter out any empty parts that might result from trimming (e.g., a segment that was just '/').
+    $parts = array_filter($parts, static fn (string $part): bool => $part !== '');
+
+    // Join the clean parts with the correct separator.
+    $path = implode(DIRECTORY_SEPARATOR, $parts);
+
+    // If the very first original segment was an absolute path, restore the leading slash.
+    if (str_starts_with($segments[0], '/') || str_starts_with($segments[0], '\\')) {
+      return DIRECTORY_SEPARATOR . $path;
     }
 
-    return $first;
+    return $path;
   }
 
   /**
@@ -70,12 +78,12 @@ final class PathHelper
    */
   public static function normalize(string $path): string
   {
-    $norm = preg_replace('#[\\\/]+#', DIRECTORY_SEPARATOR, $path);
+    $path = preg_replace('#[\\\/]+#', DIRECTORY_SEPARATOR, $path);
 
-    if (is_null($norm)) {
-      throw new RuntimeException('Failed to normalize path');
+    if (is_null($path)) {
+      throw new RuntimeException('Failed to normalize path during slash replacement.');
     }
 
-    return rtrim($norm, DIRECTORY_SEPARATOR);
+    return $path;
   }
 }

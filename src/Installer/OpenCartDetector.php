@@ -82,12 +82,16 @@ final class OpenCartDetector
       return false;
     }
 
-    // framework.php + default.php must exist
+    // Clear file cache to avoid false negatives in certain environments
+    clearstatcache(true);
+
     if (!is_file($paths['framework'])) {
       return false;
     }
 
     $defaultConfig = PathHelper::join($paths['config'], 'default.php');
+
+    clearstatcache(true);
 
     return is_file($defaultConfig);
   }
@@ -150,32 +154,23 @@ final class OpenCartDetector
    */
   private function detectFromIndexFiles(): void
   {
-    $candidates = [
-      PathHelper::join($this->rootPath, 'index.php'),
-      PathHelper::join($this->rootPath, 'upload', 'index.php'), // fallback
-    ];
+    // The root path has already been determined to be the folder containing index.php.
+    $file = PathHelper::join($this->rootPath, 'index.php');
 
-    foreach ($candidates as $file) {
-      if (!is_file($file)) {
-        continue;
-      }
-
-      try {
-        $version = $this->parseVersionFromFile($file);
-        $this->versionInfo = [
-          'version' => $version,
-          'source' => basename($file),
-        ];
-
-        // Version found, exit the method
-        return;
-      } catch (OpenCartNotDetectedException $e) {
-        // Version not found in this file, try the next one
-        continue;
-      }
+    if (!is_file($file)) {
+      throw new OpenCartNotDetectedException("The main index.php file was not found at: {$file}");
     }
 
-    throw new OpenCartNotDetectedException("Could not detect OpenCart version from any candidate file in '$this->rootPath'");
+    try {
+      $version = $this->parseVersionFromFile($file);
+      $this->versionInfo = [
+        'version' => $version,
+        'source' => basename($file),
+      ];
+    } catch (OpenCartNotDetectedException $e) {
+      // Re-throw with more context if parsing fails.
+      throw new OpenCartNotDetectedException("Could not parse version from {$file}. " . $e->getMessage());
+    }
   }
 
   /**

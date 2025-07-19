@@ -47,13 +47,57 @@ final class FileHelper
       throw new RuntimeException("Cannot open file for reading: $filePath", 0, $e);
     }
 
-    $file->setFlags(SplFileObject::DROP_NEW_LINE | SplFileObject::SKIP_EMPTY);
+    $file->setFlags(SplFileObject::DROP_NEW_LINE);
 
     foreach ($file as $line) {
       if (is_string($line)) {
         yield $line;
       }
     }
+  }
+
+  /**
+   *  Inserts a block of lines before the first line matching a pattern.
+   *
+   * @param string[] $lines         the source lines
+   * @param string   $pattern       the regex pattern to find the anchor line
+   * @param string[] $linesToInsert the block of lines to insert
+   *
+   * @return string[] the modified lines
+   */
+  public static function insertLinesBefore(array $lines, string $pattern, array $linesToInsert): array
+  {
+    foreach ($lines as $i => $line) {
+      if (preg_match($pattern, $line)) {
+        array_splice($lines, $i, 0, $linesToInsert);
+
+        break;
+      }
+    }
+
+    return $lines;
+  }
+
+  /**
+   * Inserts a block of lines after the first line matching a pattern.
+   *
+   * @param string[] $lines         the source lines
+   * @param string   $pattern       the regex pattern to find the anchor line
+   * @param string[] $linesToInsert the block of lines to insert
+   *
+   * @return string[] the modified lines
+   */
+  public static function insertLinesAfter(array $lines, string $pattern, array $linesToInsert): array
+  {
+    foreach ($lines as $i => $line) {
+      if (preg_match($pattern, $line)) {
+        array_splice($lines, $i + 1, 0, $linesToInsert);
+
+        break;
+      }
+    }
+
+    return $lines;
   }
 
   /**

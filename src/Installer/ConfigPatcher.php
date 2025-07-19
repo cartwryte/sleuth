@@ -129,22 +129,45 @@ final class ConfigPatcher
       throw new OpenCartNotDetectedException("framework.php not found: $frameworkFile");
     }
 
-    // Read array of lines
+    // 1. Read all lines using the helper.
     $lines = FileHelper::readLinesAsArray($frameworkFile);
 
-    // Comment out blocks
-    [$lines, $c1] = FileHelper::commentOutBlock($lines, 'set_error_handler');
-    [$lines, $c2] = FileHelper::commentOutBlock($lines, 'set_exception_handler');
-
-    if (!($c1 || $c2)) {
+    // 2. Avoid patching twice.
+    if (str_contains(implode("\n", $lines), 'Cartwryte Sleuth registration')) {
       return false;
     }
 
     $this->backupManager->backup($frameworkFile);
-    file_put_contents(
-      $frameworkFile,
-      implode("\n", $lines) . "\n",
+    $modifiedLines = $lines;
+
+    // 3. Use the helper to add the 'use' statement.
+    $modifiedLines = FileHelper::insertLinesAfter(
+      $modifiedLines,
+      '/<\?php\s*/', // Find the opening tag
+      ['', 'use Cartwryte\Sleuth\ErrorManager;'],
     );
+
+    // 4. Use the helper to insert the registration block.
+    $registrationCode = [
+      '',
+      '// Cartwryte Sleuth registration',
+      '$error_manager = new ErrorManager($config, $log);',
+      '$error_manager->register();',
+      '$registry->set(\'error_manager\', $error_manager);',
+      '',
+    ];
+    $modifiedLines = FileHelper::insertLinesBefore(
+      $modifiedLines,
+      '/\/\/\s*Error Handler/', // Find the comment block
+      $registrationCode,
+    );
+
+    // 5. Use the helper to comment out the original handlers.
+    [$modifiedLines] = FileHelper::commentOutBlock($modifiedLines, 'set_error_handler');
+    [$modifiedLines] = FileHelper::commentOutBlock($modifiedLines, 'set_exception_handler');
+
+    // 6. Write the clean, modified content back to the file.
+    file_put_contents($frameworkFile, implode("\n", $modifiedLines) . "\n");
 
     return true;
   }
@@ -282,7 +305,8 @@ final class ConfigPatcher
     // add to the end
     $lines[] = '';
     $lines[] = '// Cartwryte Sleuth';
-    // обратный слэш в PHP строках экранируется двойным слэшем
+
+    // Register namespace with escaped backslashes
     $lines[] = "\$autoloader->register('Cartwryte\\\\Sleuth', "
         . "DIR_STORAGE . 'vendor/cartwryte/sleuth/src/', true);";
 
