@@ -50,7 +50,9 @@ final class FileHelper
     $file->setFlags(SplFileObject::DROP_NEW_LINE | SplFileObject::SKIP_EMPTY);
 
     foreach ($file as $line) {
-      yield $line;
+      if (is_string($line)) {
+        yield $line;
+      }
     }
   }
 

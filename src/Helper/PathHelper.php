@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Cartwryte\Sleuth\Helper;
 
+use RuntimeException;
+
 /**
  * Path helper methods.
  *
@@ -41,8 +43,11 @@ final class PathHelper
    */
   public static function join(string ...$segments): string
   {
-    $first = array_shift($segments);
-    $first = rtrim($first, '/\\');
+    if (empty($segments)) {
+      return '';
+    }
+
+    $first = rtrim($segments[0], '/\\');
 
     foreach ($segments as $seg) {
       $first .= DIRECTORY_SEPARATOR . trim($seg, '/\\');
@@ -66,6 +71,10 @@ final class PathHelper
   public static function normalize(string $path): string
   {
     $norm = preg_replace('#[\\\/]+#', DIRECTORY_SEPARATOR, $path);
+
+    if (is_null($norm)) {
+      throw new RuntimeException('Failed to normalize path');
+    }
 
     return rtrim($norm, DIRECTORY_SEPARATOR);
   }

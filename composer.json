@@ -39,7 +39,10 @@
         "class": "Cartwryte\\Sleuth\\Installer\\ComposerInstaller"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0"
+        }
     },
     "suggest": {
         "opencart/opencart": "^4.1.0 Required OpenCart framework"
