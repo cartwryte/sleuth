@@ -1,4 +1,4 @@
-name: PHPStan
+name: Static Analysis
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  phpstan:
-    name: PHPStan (PHP ${{ matrix.php-version }})
+  static-analysis:
+    name: Static Analysis (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-latest
 
     strategy:
@@ -44,6 +44,9 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Check code style
+        run: composer cs-check
 
       - name: Run PHPStan
         run: composer phpstan
