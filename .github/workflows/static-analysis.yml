@@ -42,11 +42,8 @@ jobs:
       - name: Validate composer.json and composer.lock
         run: composer validate --strict
 
-      - name: Require OpenCart for analysis
-        run: composer require opencart/opencart --dev --no-interaction
-
       - name: Install dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        run: composer install --no-progress --prefer-dist
 
       - name: Check security vulnerabilities
         run: composer audit --no-dev
