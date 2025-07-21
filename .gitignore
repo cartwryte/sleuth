@@ -36,3 +36,6 @@ coverage
 # Build artifacts
 build
 dist
+
+# Wrightyard environment files
+.wrightyard

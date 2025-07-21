@@ -15,14 +15,20 @@
         "issues": "https://github.com/cartwryte/sleuth/issues",
         "source": "https://github.com/cartwryte/sleuth"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/cartwryte/wrightyard.git"
+        }
+    ],
     "require": {
         "php": "^8.0",
         "composer-plugin-api": "^2.6"
     },
     "require-dev": {
+        "cartwryte/wrightyard": "dev-main",
         "composer/composer": "^2.8",
         "friendsofphp/php-cs-fixer": "^3.84",
-        "opencart/opencart": "^4.1.0",
         "phpstan/phpstan": "^2.1"
     },
     "autoload": {
@@ -42,15 +48,9 @@
     "config": {
         "sort-packages": true,
         "platform": {
-        },
-        "audit": {
-            "ignore": [
-                "opencart/opencart"
-            ]
         }
     },
     "suggest": {
-        "opencart/opencart": "^4.1.0 Required OpenCart framework"
     },
     "minimum-stability": "dev",
     "prefer-stable": true
