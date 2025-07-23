@@ -36,6 +36,11 @@
             "Cartwryte\\Sleuth\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Opencart\\": "stubs/Opencart/"
+        }
+    },
     "scripts": {
         "cs-fix": "php-cs-fixer fix",
         "cs-check": "php-cs-fixer fix --dry-run --diff",

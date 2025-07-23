@@ -271,5 +271,6 @@ return $config
       ->in(__DIR__ . '/src/')
       ->exclude([
         'vendor',
+        'stubs',
       ]),
   );
