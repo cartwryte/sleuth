@@ -29,6 +29,14 @@ use Throwable;
 final class HtmlRenderer implements RendererInterface
 {
   private ViewModel $viewModel;
+  /**
+   * @var array{
+   * enabled: bool,
+   * defaultEditor: string,
+   * editors: array<string, array{name: string, url: string}>,
+   * pathMapping: array{from: string, to: string}
+   * }
+   */
   private array $editorConfig;
   private string $templatePath;
   private string $assetPath;
@@ -78,8 +86,8 @@ final class HtmlRenderer implements RendererInterface
   /**
    * Renders a .tpl template file with the given data.
    *
-   * @param string $file The path to the .tpl template file.
-   * @param array  $data the data to be extracted into variables for the template
+   * @param string               $file The path to the .tpl template file.
+   * @param array<string, mixed> $data the data to be extracted into variables for the template
    */
   private function renderTemplate(string $file, array $data): void
   {
@@ -96,9 +104,9 @@ final class HtmlRenderer implements RendererInterface
   /**
    * Enrich data with HTML-specific elements.
    *
-   * @param array $data
+   * @param array<string, mixed> $data
    *
-   * @return array
+   * @return array<string, mixed>
    */
   private function addHtmlData(array $data): array
   {
@@ -144,14 +152,14 @@ final class HtmlRenderer implements RendererInterface
 
       $html .= sprintf(
         '<div class="%s">
-						<a href="%s" class="editor-link" title="Open in editor">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-								<path d="M21 6.75736L19 8.75736V4H10V9H5V20H19V17.2426L21 15.2426V21.0082C21 21.556 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5501 3 20.9932V8L9.00319 2H19.9978C20.5513 2 21 2.45531 21 2.9918V6.75736ZM21.7782 8.80761L23.1924 10.2218L15.4142 18L13.9979 17.9979L14 16.5858L21.7782 8.80761Z"></path>
-							</svg>
-						</a>
-						<span class="code-line__number">%d</span>
-						<span class="code-line__content">%s</span>
-					</div>',
+                   <a href="%s" class="editor-link" title="Open in editor">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                         <path d="M21 6.75736L19 8.75736V4H10V9H5V20H19V17.2426L21 15.2426V21.0082C21 21.556 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5501 3 20.9932V8L9.00319 2H19.9978C20.5513 2 21 2.45531 21 2.9918V6.75736ZM21.7782 8.80761L23.1924 10.2218L15.4142 18L13.9979 17.9979L14 16.5858L21.7782 8.80761Z"></path>
+                      </svg>
+                   </a>
+                   <span class="code-line__number">%d</span>
+                   <span class="code-line__content">%s</span>
+                </div>',
         $classes,
         htmlspecialchars($editorUrl, ENT_QUOTES, 'UTF-8'),
         $lineNumber,
@@ -172,14 +180,15 @@ final class HtmlRenderer implements RendererInterface
    */
   private function generateEditorUrl(string $file, int $line): string
   {
-    $config = $this->getEditorConfig();
+    // Use the property instead of calling the method again.
+    $config = $this->editorConfig;
 
     if (!$config['enabled']) {
       return '#';
     }
 
-    $hostPath = $this->mapPath($file, $config['path_mapping']);
-    $editorKey = $config['default_editor'];
+    $hostPath = $this->mapPath($file, $config['pathMapping']);
+    $editorKey = $config['defaultEditor'];
 
     if (!isset($config['editors'][$editorKey])) {
       return '#';
@@ -187,9 +196,10 @@ final class HtmlRenderer implements RendererInterface
 
     $editor = $config['editors'][$editorKey];
 
+    // Cast $line to string to satisfy str_replace's expected types.
     return str_replace(
       ['{file}', '{line}'],
-      [urlencode($hostPath), $line],
+      [urlencode($hostPath), (string)$line],
       $editor['url'],
     );
   }
@@ -197,11 +207,8 @@ final class HtmlRenderer implements RendererInterface
   /**
    * Map container path to host path using configuration.
    *
-   * If mapping is not configured (empty strings), returns path as-is.
-   * Otherwise, performs Docker container to host path mapping.
-   *
-   * @param string $path    File path to map
-   * @param array  $mapping Mapping configuration with 'from' and 'to' keys
+   * @param string                          $path    File path to map
+   * @param array{from: string, to: string} $mapping Mapping configuration with 'from' and 'to' keys
    *
    * @return string Mapped path or original path if no mapping configured
    */
@@ -221,7 +228,14 @@ final class HtmlRenderer implements RendererInterface
   }
 
   /**
-   * Get editor configuration
+   * Get editor configuration.
+   *
+   * @return array{
+   * enabled: bool,
+   * defaultEditor: string,
+   * editors: array<string, array{name: string, url: string}>,
+   * pathMapping: array{from: string, to: string}
+   * }
    */
   private function getEditorConfig(): array
   {
@@ -285,7 +299,7 @@ final class HtmlRenderer implements RendererInterface
   }
 
   /**
-   * Get error CSS content
+   * Get error CSS content.
    */
   private function getCss(): false|string
   {
@@ -295,7 +309,7 @@ final class HtmlRenderer implements RendererInterface
   }
 
   /**
-   * Get error JS content
+   * Get error JS content.
    */
   private function getJs(): false|string
   {
@@ -305,9 +319,9 @@ final class HtmlRenderer implements RendererInterface
   }
 
   /**
-   * Render fallback when Twig is not available
+   * Render fallback when the main template is not available.
    *
-   * @param array $data
+   * @param array<string, mixed> $data
    */
   private function renderFallback(array $data): void
   {
@@ -449,27 +463,10 @@ final class HtmlRenderer implements RendererInterface
         echo '<details' . ($isFirst ? ' open' : '') . '>';
         echo '<summary><strong>' . $frame['file'] . ':' . $frame['line'] . ' - ' . $frame['function'] . '()</strong></summary>';
 
-        $lines = explode("\n", $frame['code']);
-        $startLine = $frame['startLine'];
-        $errorLine = $frame['line'];
-
-        echo '<pre>';
-
-        foreach ($lines as $lineIndex => $lineContent) {
-          $currentLineNumber = $startLine + $lineIndex;
-          $isErrorLine = ($currentLineNumber === $errorLine);
-
-          $prefix = $isErrorLine ? '→ ' : '  ';
-          $lineNum = str_pad((string)$currentLineNumber, 3);
-          $content = rtrim($lineContent);
-
-          if ($isErrorLine) {
-            echo '<span class="error-line">' . $prefix . $lineNum . ' ' . htmlspecialchars($content) . '</span>' . "\n";
-          } else {
-            echo $prefix . $lineNum . ' ' . htmlspecialchars($content) . "\n";
-          }
+        if (isset($frame['codeHtml'])) {
+          echo '<div class="code-container">' . $frame['codeHtml'] . '</div>';
         }
-        echo '</pre>';
+
         echo '</details>';
       }
     }

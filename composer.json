@@ -39,7 +39,10 @@
     "autoload-dev": {
         "psr-4": {
             "Opencart\\": "stubs/Opencart/"
-        }
+        },
+        "files": [
+            "stubs/Opencart/opencart_constants.php"
+        ]
     },
     "scripts": {
         "cs-fix": "php-cs-fixer fix",

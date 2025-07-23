@@ -27,17 +27,17 @@ final class SolutionAnalyzer
    *
    * @param Throwable $e
    *
-   * @return array
+   * @return array<int, array{icon: string, text: string}>
    */
   public function analyze(Throwable $e): array
   {
     $suggestions = [];
     $message = strtolower($e->getMessage());
     $file = $e->getFile();
-    $exception_class = get_class($e);
+    $exceptionClass = get_class($e);
 
     // Database issues
-    if ($exception_class === 'mysqli_sql_exception' || str_contains($message, 'mysqli') || str_contains($message, 'mysql')) {
+    if ($exceptionClass === 'mysqli_sql_exception' || str_contains($message, 'mysqli') || str_contains($message, 'mysql')) {
       $suggestions = array_merge($suggestions, $this->getDatabaseSuggestions($message));
     }
 
@@ -61,8 +61,8 @@ final class SolutionAnalyzer
       $suggestions = array_merge($suggestions, $this->getModelSuggestions());
     }
 
-    // Template issues
-    if ($exception_class === 'Twig\Error\SyntaxError' || str_contains($message, 'twig')) {
+    // Template issues (kept for potential future use, even if Twig is removed)
+    if ($exceptionClass === 'Twig\Error\SyntaxError' || str_contains($message, 'twig')) {
       $suggestions = array_merge($suggestions, $this->getTemplateSuggestions());
     }
 
@@ -79,6 +79,11 @@ final class SolutionAnalyzer
     return $suggestions;
   }
 
+  /**
+   * @param string $message
+   *
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getDatabaseSuggestions(string $message): array
   {
     $suggestions = [];
@@ -200,15 +205,15 @@ final class SolutionAnalyzer
         'icon' => '🔒',
         'text' => 'Database deadlock detected - transaction will be retried',
       ];
-
       $suggestions[] = [
-        'icon' => '🔄',
+        'icon' => '�',
         'text' => 'Consider optimizing query order to prevent deadlocks',
       ];
     }
 
     // General database connection issues
-    if (empty($suggestions)) {
+    // Use a more explicit check instead of empty() to satisfy PHPStan.
+    if ($suggestions === []) {
       $suggestions[] = [
         'icon' => '🗄️',
         'text' => 'Check database connection settings in config.php',
@@ -223,6 +228,9 @@ final class SolutionAnalyzer
     return $suggestions;
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getFileNotFoundSuggestions(): array
   {
     return [
@@ -231,56 +239,125 @@ final class SolutionAnalyzer
     ];
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getClassNotFoundSuggestions(): array
   {
     return [
-      ['icon' => '📦', 'text' => 'Check if class file exists and is properly included'],
-      ['icon' => '🏷️', 'text' => 'Verify namespace and class name spelling'],
+      [
+        'icon' => '📦',
+        'text' => 'Check if class file exists and is properly included',
+      ],
+      [
+        'icon' => '🏷️',
+        'text' => 'Verify namespace and class name spelling',
+      ],
     ];
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getMemorySuggestions(): array
   {
     return [
-      ['icon' => '💾', 'text' => 'Increase memory_limit in php.ini'],
-      ['icon' => '🔍', 'text' => 'Check for memory leaks in your code'],
-      ['icon' => '📊', 'text' => 'Profile memory usage to identify the bottleneck'],
+      [
+        'icon' => '💾',
+        'text' => 'Increase memory_limit in php.ini',
+      ],
+      [
+        'icon' => '🔍',
+        'text' => 'Check for memory leaks in your code',
+      ],
+      [
+        'icon' => '📊',
+        'text' => 'Profile memory usage to identify the bottleneck',
+      ],
     ];
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getModelSuggestions(): array
   {
     return [
-      ['icon' => '🏗️', 'text' => 'Check if model is loaded in controller: $this->load->model(\'path/to/model\')'],
-      ['icon' => '🗃️', 'text' => 'Verify related database tables exist and are populated'],
-      ['icon' => '📁', 'text' => 'Ensure model file exists in catalog/model/ or admin/model/'],
+      [
+        'icon' => '🏗️',
+        'text' => 'Check if model is loaded in controller: $this->load->model(\'path/to/model\')',
+      ],
+      [
+        'icon' => '🗃️',
+        'text' => 'Verify related database tables exist and are populated',
+      ],
+      [
+        'icon' => '📁',
+        'text' => 'Ensure model file exists in catalog/model/ or admin/model/',
+      ],
     ];
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getTemplateSuggestions(): array
   {
     return [
-      ['icon' => '📝', 'text' => 'Check Twig syntax in template file: variables, tags, filters'],
-      ['icon' => '🔍', 'text' => 'Verify template path and namespace in addPath()'],
-      ['icon' => '🗑️', 'text' => 'Clear template cache in storage/cache/template/'],
+      [
+        'icon' => '📝',
+        'text' => 'Check Twig syntax in template file: variables, tags, filters',
+      ],
+      [
+        'icon' => '🔍',
+        'text' => 'Verify template path and namespace in addPath()',
+      ],
+      [
+        'icon' => '🗑️',
+        'text' => 'Clear template cache in storage/cache/template/',
+      ],
     ];
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getExtensionSuggestions(): array
   {
     return [
-      ['icon' => '🛠️', 'text' => 'Check if the extension is installed and enabled in Admin > Extensions'],
-      ['icon' => '🔄', 'text' => 'Refresh modifications in Admin > Extensions > Modifications'],
-      ['icon' => '📂', 'text' => 'Verify extension files are uploaded to catalog/extension/ or admin/extension/'],
+      [
+        'icon' => '🛠️',
+        'text' => 'Check if the extension is installed and enabled in Admin > Extensions',
+      ],
+      [
+        'icon' => '🔄',
+        'text' => 'Refresh modifications in Admin > Extensions > Modifications',
+      ],
+      [
+        'icon' => '📂',
+        'text' => 'Verify extension files are uploaded to catalog/extension/ or admin/extension/',
+      ],
     ];
   }
 
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
   private function getPermissionSuggestions(): array
   {
     return [
-      ['icon' => '🔒', 'text' => 'Check file permissions on storage/ (cache, logs, modifications) - should be 755/644'],
-      ['icon' => '👤', 'text' => 'Verify web server user has write access to the directory'],
-      ['icon' => '🔧', 'text' => 'Check SELinux or AppArmor restrictions if on Linux'],
+      [
+        'icon' => '🔒',
+        'text' => 'Check file permissions on storage/ (cache, logs, modifications) - should be 755/644',
+      ],
+      [
+        'icon' => '👤',
+        'text' => 'Verify web server user has write access to the directory',
+      ],
+      [
+        'icon' => '🔧',
+        'text' => 'Check SELinux or AppArmor restrictions if on Linux',
+      ],
     ];
   }
 }

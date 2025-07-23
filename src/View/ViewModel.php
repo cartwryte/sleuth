@@ -132,7 +132,7 @@ final class ViewModel
         continue;
       }
 
-      $function = ($trace['class'] ?? '') . ($trace['type'] ?? '') . ($trace['function'] ?? 'n/a');
+      $function = ($trace['class'] ?? '') . ($trace['type'] ?? '') . $trace['function'];
 
       $frames[] = $this->buildCodeFrame($trace['file'], $trace['line'], $function);
     }
@@ -198,28 +198,29 @@ final class ViewModel
   {
     // For PHP errors (Error/ErrorException) - always use exception location
     if ($e instanceof Error || $e instanceof ErrorException) {
-      return ['file' => $e->getFile(), 'line' => $e->getLine()];
+      return [
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+      ];
     }
 
-    // For regular exceptions - check if thrown in user or system code
-    if ($e instanceof Exception) {
-      $traces = $e->getTrace();
+    // For other throwables, check if thrown in user or system code
+    $traces = $e->getTrace();
 
-      // If thrown in user code - show where it was thrown
-      if ($this->isUserThrownException($e)) {
-        return [
-          'file' => $e->getFile(),
-          'line' => $e->getLine(),
-        ];
-      }
+    // If thrown in user code - show where it was thrown
+    if ($this->isUserThrownException($e)) {
+      return [
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+      ];
+    }
 
-      // If thrown in system code - show where user code called it
-      if (isset($traces[0]['file'], $traces[0]['line'])) {
-        return [
-          'file' => $traces[0]['file'],
-          'line' => $traces[0]['line'],
-        ];
-      }
+    // If thrown in system code - show where user code called it
+    if (isset($traces[0]['file'], $traces[0]['line'])) {
+      return [
+        'file' => $traces[0]['file'],
+        'line' => $traces[0]['line'],
+      ];
     }
 
     // Fallback to exception location
@@ -232,11 +233,11 @@ final class ViewModel
   /**
    * Check if exception was thrown directly by user code
    *
-   * @param Exception $e The exception to check
+   * @param Throwable $e The exception to check
    *
    * @return bool True if thrown in user code, false if in system code
    */
-  private function isUserThrownException(Exception $e): bool
+  private function isUserThrownException(Throwable $e): bool
   {
     $exceptionFile = $e->getFile();
 
@@ -276,7 +277,7 @@ final class ViewModel
       'PHP Version' => PHP_VERSION,
       'OpenCart Version' => defined('VERSION') ? VERSION : 'Unknown',
       'Error Time' => date('Y-m-d H:i:s'),
-      'Peak Memory' => "{$memoryMb} MB / $memoryLimit",
+      'Peak Memory' => "$memoryMb MB / $memoryLimit",
       'Request Method' => htmlspecialchars($_SERVER['REQUEST_METHOD'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
       'Request URI' => htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
       'Server Software' => htmlspecialchars($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
@@ -288,7 +289,7 @@ final class ViewModel
    *
    * @param Throwable $e The exception to analyze
    *
-   * @return array<int, string> Array of suggestions
+   * @return array<int, array{icon: string, text: string}> Array of suggestions
    */
   private function buildSuggestions(Throwable $e): array
   {
