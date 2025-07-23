@@ -233,7 +233,7 @@
   /* Layout */
   .page__container {
     inline-size: 100%;
-    padding-inline: max(1rem, calc(50vi - 36rem + 2rem));
+    padding-inline: max(1rem, calc(50vi - 52rem + 2rem));
   }
 
   /* Header */
@@ -545,7 +545,7 @@
 
   .code-line {
     display: flex;
-    align-items: flex-start;
+    align-items: stretch;
     min-block-size: 1.25rem;
   }
 
@@ -562,9 +562,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    margin: auto;
     inline-size: 1.5rem;
-    block-size: 1.25em;
     flex-shrink: 0;
   }
 
@@ -582,6 +580,9 @@
   }
 
   .code-line__number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: end;
     inline-size: 3rem;
     text-align: end;
     padding-inline-end: 0.75rem;
@@ -594,7 +595,7 @@
   }
 
   .code-line__content {
-    padding-inline-start: 0.75rem;
+    padding-inline-start: 1rem;
     padding-inline-end: 0.5rem;
     flex: 1;
     white-space: pre;
