@@ -32,14 +32,14 @@ final class SyntaxHighlighter
     // Prepend an open-tag so tokenizer treats it as PHP
     $source = '<?php ' . $code;
     $tokens = token_get_all($source);
-    $highlighted_html = '';
+    $highlightedHtml = '';
 
     // Optional tokens (may not exist in all PHP versions)
-    $t_match = defined('T_MATCH') ? T_MATCH : 0;
-    $t_enum = defined('T_ENUM') ? T_ENUM : 0;
-    $t_true = defined('T_TRUE') ? T_TRUE : 0;
-    $t_false = defined('T_FALSE') ? T_FALSE : 0;
-    $t_null = defined('T_NULL') ? T_NULL : 0;
+    $tMatch = defined('T_MATCH') ? T_MATCH : 0;
+    $tEnum = defined('T_ENUM') ? T_ENUM : 0;
+    $tTrue = defined('T_TRUE') ? T_TRUE : 0;
+    $tFalse = defined('T_FALSE') ? T_FALSE : 0;
+    $tNull = defined('T_NULL') ? T_NULL : 0;
 
     foreach ($tokens as $token) {
       if (is_array($token)) {
@@ -56,7 +56,7 @@ final class SyntaxHighlighter
         // Decide CSS class by token ID
         $class = match ($id) {
           // PHP tags
-          T_CLOSE_TAG, T_OPEN_TAG => 'code-line__token--tag',
+          T_CLOSE_TAG => 'code-line__token--tag',
 
           // Comments
           T_COMMENT, T_DOC_COMMENT => 'code-line__token--comment',
@@ -80,7 +80,7 @@ final class SyntaxHighlighter
           T_LNUMBER, T_DNUMBER => 'code-line__token--number',
 
           // Booleans & null
-          $t_true, $t_false, $t_null => 'code-line__token--literal',
+          $tTrue, $tFalse, $tNull => 'code-line__token--literal',
 
           // Declaration keywords
           T_FUNCTION,
@@ -99,7 +99,7 @@ final class SyntaxHighlighter
           T_FINAL,
           T_CONST,
           T_NEW,
-          $t_enum => 'code-line__token--keyword',
+          $tEnum => 'code-line__token--keyword',
 
           // Control structures
           T_IF,
@@ -118,7 +118,7 @@ final class SyntaxHighlighter
           T_CATCH,
           T_FINALLY,
           T_THROW,
-          $t_match => 'code-line__token--control',
+          $tMatch => 'code-line__token--control',
 
           // Built-ins & includes
           T_ECHO,
@@ -134,15 +134,15 @@ final class SyntaxHighlighter
         };
 
         // Wrap in <span> if we have a class, otherwise append plain text
-        $highlighted_html .= $class
-            ? "<span class=\"{$class}\">{$escaped}</span>"
+        $highlightedHtml .= $class
+            ? "<span class=\"$class\">$escaped</span>"
             : $escaped;
       } else {
         // Single‐char token (punctuation, operators…)
-        $highlighted_html .= htmlspecialchars($token, ENT_QUOTES | ENT_SUBSTITUTE);
+        $highlightedHtml .= htmlspecialchars($token, ENT_QUOTES | ENT_SUBSTITUTE);
       }
     }
 
-    return $highlighted_html;
+    return $highlightedHtml;
   }
 }
