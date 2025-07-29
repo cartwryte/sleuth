@@ -39,3 +39,6 @@ dist
 
 # Wrightyard environment files
 .wrightyard
+
+# Sleuth
+/src/config/paths.php

@@ -1,0 +1,16 @@
+{
+    "name": "sleuth-frontend",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@cartwryte/luminary": "^0.1.0"
+    },
+    "devDependencies": {
+        "vite": "^7.0.6"
+    }
+}

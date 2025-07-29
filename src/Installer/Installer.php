@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Installer;
 
 use Cartwryte\Sleuth\Exception\OpenCartNotDetectedException;
+use Cartwryte\Sleuth\Helper\PathHelper;
 use Exception;
 use RuntimeException;
 
@@ -31,18 +32,20 @@ final class Installer
   private BackupManager $backupManager;
   private AutoloaderInstaller $autoloaderInstaller;
   private ConfigPatcher $configPatcher;
+  private AssetInstaller $assetInstaller;
 
   /**
    * Constructor.
-   *
-   * @param string $rootPath Path to the OpenCart root directory
    */
-  public function __construct(string $rootPath)
+  public function __construct()
   {
+    $rootPath = PathHelper::getRoot();
+
     $this->detector = new OpenCartDetector($rootPath);
     $this->backupManager = new BackupManager($this->detector);
     $this->autoloaderInstaller = new AutoloaderInstaller($this->detector, $this->backupManager);
     $this->configPatcher = new ConfigPatcher($this->detector, $this->backupManager);
+    $this->assetInstaller = new AssetInstaller($rootPath);
   }
 
   /**
@@ -82,6 +85,7 @@ final class Installer
 
       $this->installAutoloader($report);
       $this->applyPatches($report);
+      $this->installAssets($report);
       $this->initializeErrorHandler($report);
 
       $report['success'] = true;
@@ -233,5 +237,25 @@ final class Installer
   private function initializeErrorHandler(array &$report): void
   {
     $report['steps'][] = 'Error handlers commented out';
+  }
+
+  /**
+   * Copy pre-built Luminary assets to OpenCart public directory.
+   *
+   * @param array<string,mixed>& $report Reference to the report to append steps
+   */
+  private function installAssets(array &$report): void
+  {
+    if ($this->assetInstaller->isInstalled()) {
+      $report['steps'][] = 'Luminary assets already installed';
+
+      return;
+    }
+
+    if ($this->assetInstaller->install()) {
+      $report['steps'][] = 'Luminary assets copied to /catalog/view/sleuth/';
+    } else {
+      $report['errors'][] = 'Failed to install Luminary assets';
+    }
   }
 }

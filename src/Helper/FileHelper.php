@@ -323,6 +323,52 @@ final class FileHelper
   }
 
   /**
+   * Ensures that a directory exists. If not, it attempts to create it recursively.
+   * Throws an exception on failure.
+   *
+   * @param string $directory path to the directory
+   *
+   * @throws RuntimeException if the directory cannot be created
+   */
+  public static function ensureDirectoryExists(string $directory): void
+  {
+    // Use the race-condition-safe method to create the directory.
+    if (!is_dir($directory) && !mkdir($directory, 0755, true) && !is_dir($directory)) {
+      throw new RuntimeException(sprintf('Directory "%s" could not be created.', $directory));
+    }
+  }
+
+  /**
+   * Safely writes content to a file.
+   * Throws an exception on failure.
+   *
+   * @param string $filePath the path to the file
+   * @param string $content  the content to write
+   *
+   * @throws RuntimeException if the file cannot be written
+   */
+  public static function writeFile(string $filePath, string $content): void
+  {
+    if (file_put_contents($filePath, $content) === false) {
+      throw new RuntimeException("Failed to write to file: {$filePath}");
+    }
+  }
+
+  /**
+   * Safely writes an array of lines to a file.
+   *
+   * @param string   $filePath the path to the file
+   * @param string[] $lines    the array of lines to write
+   *
+   * @throws RuntimeException if the file cannot be written
+   */
+  public static function writeLines(string $filePath, array $lines): void
+  {
+    // Join lines with the appropriate EOL character and use our safe writer.
+    self::writeFile($filePath, implode("\n", $lines));
+  }
+
+  /**
    * Calculate the depth change of curly braces in a line.
    *
    * @param string $line Line to analyze

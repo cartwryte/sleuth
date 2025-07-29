@@ -12,8 +12,11 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Renderer;
 
 use Cartwryte\Sleuth\Formatter\LogFormatter;
+use Cartwryte\Sleuth\Frontend\ViteHelper;
+use Cartwryte\Sleuth\Helper\PathHelper;
 use Cartwryte\Sleuth\Helper\SyntaxHighlighter;
 use Cartwryte\Sleuth\View\ViewModel;
+use JsonException;
 use Opencart\System\Engine\Config;
 use Opencart\System\Library\Log;
 use RuntimeException;
@@ -39,7 +42,6 @@ final class HtmlRenderer implements RendererInterface
    */
   private array $editorConfig;
   private string $templatePath;
-  private string $assetPath;
 
   /**
    * Constructor.
@@ -57,7 +59,6 @@ final class HtmlRenderer implements RendererInterface
     // Define paths relative to this file to make the component self-contained.
     $basePath = dirname(__DIR__) . '/Frontend';
     $this->templatePath = rtrim($basePath, '/') . '/template/';
-    $this->assetPath = rtrim($basePath, '/') . '/';
   }
 
   /**
@@ -66,6 +67,8 @@ final class HtmlRenderer implements RendererInterface
    * Attempts to use the .tpl template file. If not found, it uses a built-in fallback.
    *
    * @param Throwable $e
+   *
+   * @throws JsonException
    */
   public function render(Throwable $e): void
   {
@@ -102,29 +105,94 @@ final class HtmlRenderer implements RendererInterface
   }
 
   /**
+   * @return ViteHelper
+   */
+  private function getViteHelper(): ViteHelper
+  {
+    $root = PathHelper::getRoot();
+
+    return new ViteHelper(
+      buildPath: $root . '/catalog/view/sleuth',
+      buildUrl: '/catalog/view/sleuth',
+      hotFilePath: dirname(__DIR__) . '/Frontend/dist/hot',
+    );
+  }
+
+  /**
    * Enrich data with HTML-specific elements.
    *
    * @param array<string, mixed> $data
+   *
+   * @throws JsonException
    *
    * @return array<string, mixed>
    */
   private function addHtmlData(array $data): array
   {
-    $data['css'] = $this->getCss();
-    $data['js'] = $this->getJs();
+    $vite = $this->getViteHelper();
+    $data['viteAssets'] = $vite(['src/Frontend/js/luminary.js']);
+
+    $data['titleEscaped'] = htmlspecialchars($data['title'] ?? 'Error');
+    $data['headingTitleEscaped'] = htmlspecialchars($data['headingTitle'] ?? 'Debug');
+    $data['messageEscaped'] = htmlspecialchars($data['message'] ?? '');
+
+    $exceptionsJson = json_encode($data['exceptions'] ?? []);
+    $data['exceptionsJson'] = htmlspecialchars($exceptionsJson !== false ? $exceptionsJson : '[]', ENT_QUOTES, 'UTF-8');
+
+    $techInfoJson = json_encode($data['techInfo'] ?? []);
+    $data['techInfoJson'] = htmlspecialchars($techInfoJson !== false ? $techInfoJson : '{}', ENT_QUOTES, 'UTF-8');
+
+    $suggestionsJson = json_encode($data['suggestions'] ?? []);
+    $data['suggestionsJson'] = htmlspecialchars($suggestionsJson !== false ? $suggestionsJson : '[]', ENT_QUOTES, 'UTF-8');
 
     foreach ($data['frames'] as &$frame) {
       if (isset($frame['code'])) {
-        $frame['codeHtml'] = $this->buildCodeHtml(
+        $frame['codeLines'] = $this->buildLuminaryCodeLines(
           $frame['code'],
           $frame['startLine'],
           $frame['line'],
           $frame['fullPath'],
         );
+
+        $codeLinesJson = json_encode($frame['codeLines'], JSON_UNESCAPED_SLASHES);
+        $frame['codeLinesJson'] = $codeLinesJson !== false ? $codeLinesJson : '[]';
       }
+
+      $frame['fileEscaped'] = htmlspecialchars($frame['file']);
     }
 
     return $data;
+  }
+
+  /**
+   * Build code lines data for Luminary web components.
+   *
+   * @param string $rawCode
+   * @param int    $start
+   * @param int    $errorLine
+   * @param string $filePath
+   *
+   * @return array<int, array{number: int, tokens: array<int, array{type: string, content: string}>, isError: bool, editorUrl: string}>
+   */
+  private function buildLuminaryCodeLines(string $rawCode, int $start, int $errorLine, string $filePath): array
+  {
+    $codeLines = explode("\n", $rawCode);
+    $lines = [];
+
+    foreach ($codeLines as $index => $rawLine) {
+      $lineNumber = $start + $index;
+      $isError = $lineNumber === $errorLine;
+      $editorUrl = $this->generateEditorUrl($filePath, $lineNumber);
+
+      $lines[] = [
+        'number' => $lineNumber,
+        'tokens' => SyntaxHighlighter::tokenize($rawLine),
+        'isError' => $isError,
+        'editorUrl' => $editorUrl,
+      ];
+    }
+
+    return $lines;
   }
 
   /**
@@ -296,26 +364,6 @@ final class HtmlRenderer implements RendererInterface
       $message = LogFormatter::simple($e);
       $this->log->write($message);
     }
-  }
-
-  /**
-   * Get error CSS content.
-   */
-  private function getCss(): false|string
-  {
-    $file = $this->assetPath . 'css/error.css';
-
-    return is_file($file) ? file_get_contents($file) : '';
-  }
-
-  /**
-   * Get error JS content.
-   */
-  private function getJs(): false|string
-  {
-    $file = $this->assetPath . 'js/error.js';
-
-    return is_file($file) ? file_get_contents($file) : '';
   }
 
   /**

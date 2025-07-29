@@ -9,10 +9,14 @@
 
 declare(strict_types=1);
 
-if (!defined('DIR_SYSTEM')) {
-  define('DIR_SYSTEM', 'stub-dir-system');
-}
-
 if (!defined('VERSION')) {
   define('VERSION', 'stub-version');
+}
+
+if (!defined('HTTP_SERVER')) {
+  define('HTTP_SERVER', 'stub-http-server');
+}
+
+if (!defined('DIR_SYSTEM')) {
+  define('DIR_SYSTEM', 'stub-dir-system');
 }

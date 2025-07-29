@@ -3,27 +3,54 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title><?php echo htmlspecialchars($title ?? 'Error'); ?></title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
-        <style><?php echo $css ?? ''; ?></style>
+        <title><?php echo $titleEscaped; ?></title>
+        <?php echo $viteAssets ?? ''; ?>
     </head>
     <body>
-        <fieldset class="theme-switcher">
-            <legend class="theme-switcher__legend">Theme</legend>
-            <input class="theme-switcher__radio theme-switcher__radio--light" type="radio" name="color-scheme" value="light" id="theme-light" aria-label="Light theme">
-            <input class="theme-switcher__radio theme-switcher__radio--system" type="radio" name="color-scheme" value="system" id="theme-system" aria-label="System theme" checked>
-            <input class="theme-switcher__radio theme-switcher__radio--dark" type="radio" name="color-scheme" value="dark" id="theme-dark" aria-label="Dark theme">
-            <div class="theme-switcher__indicator" aria-hidden="true"></div>
-        </fieldset>
+        <luminary-layout title="<?php echo $titleEscaped; ?>">
+            <luminary-header
+                slot="header"
+                title="<?php echo $headingTitleEscaped; ?>"
+                message="<?php echo $messageEscaped; ?>"
+                class="container"
+            >
+                <?php if (!empty($exceptions)) { ?>
+                <luminary-exceptions-chain
+                    slot="exceptions-chain"
+                    data-exceptions="<?php echo $exceptionsJson; ?>"
+                ></luminary-exceptions-chain>
+                <?php } ?>
+                <?php if (!empty($suggestions)) { ?>
+                <luminary-suggestions
+                    slot="suggestions"
+                    title="How to fix this"
+                    data-suggestions='<?php echo $suggestionsJson; ?>'
+                ></luminary-suggestions>
+                <?php } ?>
 
-        <?php require __DIR__ . '/header.tpl'; ?>
+                <luminary-tech-info
+                    slot="tech-info"
+                    data-tech-info='<?php echo $techInfoJson; ?>'
+                ></luminary-tech-info>
+            </luminary-header>
 
-        <main class="debug-main page__container">
-            <?php require __DIR__ . '/error.tpl'; ?>
-        </main>
-
-        <script><?php echo $js ?? ''; ?></script>
+            <luminary-stack-trace
+                title="Stack Trace"
+                slot="main"
+                class="container"
+            >
+                <?php foreach ($frames as $index => $frame) { ?>
+                <pre><?php var_dump($frame['codeLinesJson'] ?? 'missing'); ?></pre>
+                <textarea><?php echo $frame['codeLinesJson'] ?? '[]'; ?></textarea>
+                <luminary-stack-frame
+                    file="<?php echo $frame['fileEscaped']; ?>"
+                    line="<?php echo $frame['line']; ?>"
+                    function="<?php echo $frame['function']; ?>"
+                <?php echo $index === 0 ? 'open' : ''; ?>
+                data-code-lines='<?php echo $frame['codeLinesJson'] ?? '[]'; ?>'
+                ></luminary-stack-frame>
+                <?php } ?>
+            </luminary-stack-trace>
+        </luminary-layout>
     </body>
 </html>
