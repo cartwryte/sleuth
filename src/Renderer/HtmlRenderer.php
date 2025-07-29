@@ -196,49 +196,6 @@ final class HtmlRenderer implements RendererInterface
   }
 
   /**
-   * Build HTML for syntax highlighted code with line numbers.
-   *
-   * @param string $rawCode   Raw source code
-   * @param int    $start     Starting line number
-   * @param int    $errorLine Line number where error occurred
-   * @param string $filePath  Full file path for editor links
-   *
-   * @return string HTML with syntax highlighting
-   */
-  private function buildCodeHtml(string $rawCode, int $start, int $errorLine, string $filePath): string
-  {
-    $codeLines = explode("\n", $rawCode);
-    $html = '';
-
-    foreach ($codeLines as $index => $rawLine) {
-      $lineNumber = $start + $index;
-      $isError = $lineNumber === $errorLine;
-      $classes = 'code-line' . ($isError ? ' code-line--error' : '');
-      $highlighted = SyntaxHighlighter::highlight($rawLine);
-
-      $editorUrl = $this->generateEditorUrl($filePath, $lineNumber);
-
-      $html .= sprintf(
-        '<div class="%s">
-                   <a href="%s" class="editor-link" title="Open in editor">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                         <path d="M21 6.75736L19 8.75736V4H10V9H5V20H19V17.2426L21 15.2426V21.0082C21 21.556 20.5551 22 20.0066 22H3.9934C3.44476 22 3 21.5501 3 20.9932V8L9.00319 2H19.9978C20.5513 2 21 2.45531 21 2.9918V6.75736ZM21.7782 8.80761L23.1924 10.2218L15.4142 18L13.9979 17.9979L14 16.5858L21.7782 8.80761Z"></path>
-                      </svg>
-                   </a>
-                   <span class="code-line__number">%d</span>
-                   <span class="code-line__content">%s</span>
-                </div>',
-        $classes,
-        htmlspecialchars($editorUrl, ENT_QUOTES, 'UTF-8'),
-        $lineNumber,
-        $highlighted,
-      );
-    }
-
-    return $html;
-  }
-
-  /**
    * Generate editor URL for opening file at specific line.
    *
    * @param string $file
