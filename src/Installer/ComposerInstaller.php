@@ -215,7 +215,7 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
 
   /**
    * Walks up from vendor-dir to find the first directory
-   * containing an index.php. That is assumed to be OpenCart root.
+   * containing an index.tpl. That is assumed to be OpenCart root.
    *
    * @return string|null path to OpenCart root or null if not found
    */
@@ -226,7 +226,7 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
     $maxDepth = 5;
 
     for ($i = 0; $i < $maxDepth; $i++) {
-      if (is_file($path . '/index.php')) {
+      if (is_file($path . '/index.tpl')) {
         return $path;
       }
 

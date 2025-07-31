@@ -154,11 +154,11 @@ final class OpenCartDetector
    */
   private function detectFromIndexFiles(): void
   {
-    // The root path has already been determined to be the folder containing index.php.
-    $file = PathHelper::join($this->rootPath, 'index.php');
+    // The root path has already been determined to be the folder containing index.tpl.
+    $file = PathHelper::join($this->rootPath, 'index.tpl');
 
     if (!is_file($file)) {
-      throw new OpenCartNotDetectedException("The main index.php file was not found at: {$file}");
+      throw new OpenCartNotDetectedException("The main index.tpl file was not found at: {$file}");
     }
 
     try {

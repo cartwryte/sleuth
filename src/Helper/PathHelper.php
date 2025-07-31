@@ -77,8 +77,8 @@ final class PathHelper
    * @return string Normalized path
    *
    * @example
-   *   PathHelper::join('var', 'www/', '/html', 'index.php')
-   *   // → 'var/www/html/index.php'
+   *   PathHelper::join('var', 'www/', '/html', 'index.tpl')
+   *   // → 'var/www/html/index.tpl'
    */
   public static function join(string ...$segments): string
   {

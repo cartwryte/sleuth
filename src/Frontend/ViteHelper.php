@@ -151,7 +151,7 @@ final class ViteHelper
       }
     }
 
-    if ($manifestPath === null) {
+    if (is_null($manifestPath)) {
       throw new RuntimeException('Vite manifest not found. Please run "npm run build".');
     }
 

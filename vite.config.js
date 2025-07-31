@@ -9,6 +9,7 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 
 export default defineConfig({
+    base: './',
     server: {
         writeHotFile: resolve(__dirname, 'src/Frontend/dist/hot'),
     },
@@ -16,15 +17,12 @@ export default defineConfig({
         manifest: true,
         outDir: 'src/Frontend/dist',
         emptyOutDir: true,
-        lib: {
-            entry: resolve(__dirname, 'src/Frontend/js/luminary.js'),
-            name: 'Luminary',
-            fileName: 'luminary',
-            formats: ['iife'],
-        },
         rollupOptions: {
+            input: resolve(__dirname, 'src/Frontend/js/luminary.js'),
             output: {
                 assetFileNames: '[name].[ext]',
+                entryFileNames: '[name].js',
+                chunkFileNames: 'chunks/[name]-[hash].js',
             }
         }
     }

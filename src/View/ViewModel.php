@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\View;
 
 use Cartwryte\Sleuth\Analyzer\SolutionAnalyzer;
+use Cartwryte\Sleuth\Transformer\TechInfoTransformer;
 use Error;
 use ErrorException;
 use Exception;
@@ -49,7 +50,7 @@ final class ViewModel
       'line' => $e->getLine(),
       'exceptions' => $this->buildExceptionChain($e),
       'frames' => $this->buildFrames($e),
-      'techInfo' => $this->buildTechInfo(),
+      'techInfo' => (new TechInfoTransformer())->toArray(),
       'suggestions' => $this->buildSuggestions($e),
     ];
   }
@@ -260,28 +261,6 @@ final class ViewModel
   private function relativePath(string $file): string
   {
     return str_replace(dirname(DIR_SYSTEM) . '/', '', $file);
-  }
-
-  /**
-   * Get technical information about current request and environment
-   *
-   * @return array<string, string> Technical information
-   */
-  private function buildTechInfo(): array
-  {
-    $memoryUsage = memory_get_peak_usage(true);
-    $memoryMb = round($memoryUsage / 1024 / 1024, 2);
-    $memoryLimit = ini_get('memory_limit');
-
-    return [
-      'PHP Version' => PHP_VERSION,
-      'OpenCart Version' => defined('VERSION') ? VERSION : 'Unknown',
-      'Error Time' => date('Y-m-d H:i:s'),
-      'Peak Memory' => "$memoryMb MB / $memoryLimit",
-      'Request Method' => htmlspecialchars($_SERVER['REQUEST_METHOD'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
-      'Request URI' => htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
-      'Server Software' => htmlspecialchars($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
-    ];
   }
 
   /**

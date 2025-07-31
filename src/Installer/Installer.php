@@ -68,7 +68,7 @@ final class Installer
 
     try {
       // We get the version directly. This method will throw an exception
-      // if it can't read 'index.php' or find the version constant inside.
+      // if it can't read 'index.tpl' or find the version constant inside.
       // This is a much more reliable check than is_file('.../framework.php').
       $version = $this->detector->getVersion();
       $majorVersion = $this->detector->getMajorVersion();

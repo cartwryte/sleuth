@@ -8,7 +8,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
-        "@cartwryte/luminary": "^0.1.0"
+        "@cartwryte/luminary": "^0.4.0"
     },
     "devDependencies": {
         "vite": "^7.0.6"

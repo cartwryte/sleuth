@@ -51,6 +51,10 @@ final class SolutionAnalyzer
       $suggestions = array_merge($suggestions, $this->getClassNotFoundSuggestions());
     }
 
+    if (str_contains($message, 'undefined variable')) {
+      $suggestions = array_merge($suggestions, $this->getUndefinedVariableSuggestions($e->getMessage()));
+    }
+
     // Memory issues
     if (str_contains($message, 'memory') || str_contains($message, 'allowed memory size')) {
       $suggestions = array_merge($suggestions, $this->getMemorySuggestions());
@@ -357,6 +361,38 @@ final class SolutionAnalyzer
       [
         'icon' => '🔧',
         'text' => 'Check SELinux or AppArmor restrictions if on Linux',
+      ],
+    ];
+  }
+
+  /**
+   * @param string $message the full error message
+   *
+   * @return array<int, array{icon: string, text: string}>
+   */
+  private function getUndefinedVariableSuggestions(string $message): array
+  {
+    $variableName = 'this variable';
+
+    // Try to extract the variable name from the message
+    if (preg_match('/undefined variable: (\S+)/i', $message, $matches)) {
+      // We check for \S+ which matches any non-whitespace character.
+      // The variable name is in $matches[1].
+      $variableName = '`' . htmlspecialchars($matches[1]) . '`';
+    }
+
+    return [
+      [
+        'icon' => '✍️',
+        'text' => "Variable {$variableName} was not defined. Check for typos in the name.",
+      ],
+      [
+        'icon' => '📤',
+        'text' => 'Ensure the variable is initialized or passed from the controller (e.g., `$data[\'variable\'] = ...`).',
+      ],
+      [
+        'icon' => '✅',
+        'text' => 'Make sure you are not trying to use a variable before it has been assigned a value.',
       ],
     ];
   }

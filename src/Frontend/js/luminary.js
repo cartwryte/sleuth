@@ -5,7 +5,9 @@
  * file that was distributed with this source code.
  */
 
+import '@cartwryte/luminary/luminary.css';
 
-import '@cartwryte/luminary'
+import { LUMINARY_NAMESPACE, LuminaryStore, } from '@cartwryte/luminary';
 
-console.log('Sleuth Luminary loaded')
+console.log(LUMINARY_NAMESPACE, LUMINARY_NAMESPACE)
+console.log(LuminaryStore)

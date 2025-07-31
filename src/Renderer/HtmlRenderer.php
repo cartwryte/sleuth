@@ -14,7 +14,7 @@ namespace Cartwryte\Sleuth\Renderer;
 use Cartwryte\Sleuth\Formatter\LogFormatter;
 use Cartwryte\Sleuth\Frontend\ViteHelper;
 use Cartwryte\Sleuth\Helper\PathHelper;
-use Cartwryte\Sleuth\Helper\SyntaxHighlighter;
+use Cartwryte\Sleuth\Transformer\StoreDataTransformer;
 use Cartwryte\Sleuth\View\ViewModel;
 use JsonException;
 use Opencart\System\Engine\Config;
@@ -72,17 +72,24 @@ final class HtmlRenderer implements RendererInterface
    */
   public function render(Throwable $e): void
   {
-    $data = $this->viewModel->build($e);
-    $data = $this->addHtmlData($data);
+    $rawData = $this->viewModel->build($e);
 
-    // The main layout file is the single entry point for rendering.
-    $layoutFile = $this->templatePath . 'layout.tpl';
+    $storeData = (new StoreDataTransformer($rawData, $this->editorConfig))->transform();
 
-    if (is_file($layoutFile)) {
-      $this->renderTemplate($layoutFile, $data);
+    $viewData = [
+      'titleEscaped' => htmlspecialchars($rawData['title'] ?? 'Error'),
+      'viteAssets' => $this->getViteHelper()(['src/Frontend/js/luminary.js']),
+      'storeData' => $storeData,
+    ];
+
+    // The main file is the single entry point for rendering.
+    $indexFile = $this->templatePath . 'index.tpl';
+
+    if (is_file($indexFile)) {
+      $this->renderTemplate($indexFile, $viewData);
     } else {
-      $this->logError(new RuntimeException("Layout template not found: $layoutFile"));
-      $this->renderFallback($data);
+      $this->logError(new RuntimeException("Layout template not found: $indexFile"));
+      $this->renderFallback($viewData);
     }
   }
 
@@ -116,140 +123,6 @@ final class HtmlRenderer implements RendererInterface
       buildUrl: '/catalog/view/sleuth',
       hotFilePath: dirname(__DIR__) . '/Frontend/dist/hot',
     );
-  }
-
-  /**
-   * Enrich data with HTML-specific elements.
-   *
-   * @param array<string, mixed> $data
-   *
-   * @throws JsonException
-   *
-   * @return array<string, mixed>
-   */
-  private function addHtmlData(array $data): array
-  {
-    $vite = $this->getViteHelper();
-    $data['viteAssets'] = $vite(['src/Frontend/js/luminary.js']);
-
-    $data['titleEscaped'] = htmlspecialchars($data['title'] ?? 'Error');
-    $data['headingTitleEscaped'] = htmlspecialchars($data['headingTitle'] ?? 'Debug');
-    $data['messageEscaped'] = htmlspecialchars($data['message'] ?? '');
-
-    $exceptionsJson = json_encode($data['exceptions'] ?? []);
-    $data['exceptionsJson'] = htmlspecialchars($exceptionsJson !== false ? $exceptionsJson : '[]', ENT_QUOTES, 'UTF-8');
-
-    $techInfoJson = json_encode($data['techInfo'] ?? []);
-    $data['techInfoJson'] = htmlspecialchars($techInfoJson !== false ? $techInfoJson : '{}', ENT_QUOTES, 'UTF-8');
-
-    $suggestionsJson = json_encode($data['suggestions'] ?? []);
-    $data['suggestionsJson'] = htmlspecialchars($suggestionsJson !== false ? $suggestionsJson : '[]', ENT_QUOTES, 'UTF-8');
-
-    foreach ($data['frames'] as &$frame) {
-      if (isset($frame['code'])) {
-        $frame['codeLines'] = $this->buildLuminaryCodeLines(
-          $frame['code'],
-          $frame['startLine'],
-          $frame['line'],
-          $frame['fullPath'],
-        );
-
-        $codeLinesJson = json_encode($frame['codeLines'], JSON_UNESCAPED_SLASHES);
-        $frame['codeLinesJson'] = $codeLinesJson !== false ? $codeLinesJson : '[]';
-      }
-
-      $frame['fileEscaped'] = htmlspecialchars($frame['file']);
-    }
-
-    return $data;
-  }
-
-  /**
-   * Build code lines data for Luminary web components.
-   *
-   * @param string $rawCode
-   * @param int    $start
-   * @param int    $errorLine
-   * @param string $filePath
-   *
-   * @return array<int, array{number: int, tokens: array<int, array{type: string, content: string}>, isError: bool, editorUrl: string}>
-   */
-  private function buildLuminaryCodeLines(string $rawCode, int $start, int $errorLine, string $filePath): array
-  {
-    $codeLines = explode("\n", $rawCode);
-    $lines = [];
-
-    foreach ($codeLines as $index => $rawLine) {
-      $lineNumber = $start + $index;
-      $isError = $lineNumber === $errorLine;
-      $editorUrl = $this->generateEditorUrl($filePath, $lineNumber);
-
-      $lines[] = [
-        'number' => $lineNumber,
-        'tokens' => SyntaxHighlighter::tokenize($rawLine),
-        'isError' => $isError,
-        'editorUrl' => $editorUrl,
-      ];
-    }
-
-    return $lines;
-  }
-
-  /**
-   * Generate editor URL for opening file at specific line.
-   *
-   * @param string $file
-   * @param int    $line
-   *
-   * @return string
-   */
-  private function generateEditorUrl(string $file, int $line): string
-  {
-    // Use the property instead of calling the method again.
-    $config = $this->editorConfig;
-
-    if (!$config['enabled']) {
-      return '#';
-    }
-
-    $hostPath = $this->mapPath($file, $config['pathMapping']);
-    $editorKey = $config['defaultEditor'];
-
-    if (!isset($config['editors'][$editorKey])) {
-      return '#';
-    }
-
-    $editor = $config['editors'][$editorKey];
-
-    // Cast $line to string to satisfy str_replace's expected types.
-    return str_replace(
-      ['{file}', '{line}'],
-      [urlencode($hostPath), (string)$line],
-      $editor['url'],
-    );
-  }
-
-  /**
-   * Map container path to host path using configuration.
-   *
-   * @param string                          $path    File path to map
-   * @param array{from: string, to: string} $mapping Mapping configuration with 'from' and 'to' keys
-   *
-   * @return string Mapped path or original path if no mapping configured
-   */
-  private function mapPath(string $path, array $mapping): string
-  {
-    // If mapping is not configured (empty strings) - return path as-is
-    if (empty($mapping['from']) || empty($mapping['to'])) {
-      return $path;
-    }
-
-    // Otherwise perform Docker container to host path mapping
-    if (str_starts_with($path, $mapping['from'])) {
-      return str_replace($mapping['from'], $mapping['to'], $path);
-    }
-
-    return $path;
   }
 
   /**
