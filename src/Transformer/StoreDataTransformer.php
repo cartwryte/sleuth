@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Cartwryte\Sleuth\Transformer;
 
+use Cartwryte\Sleuth\Helper\ArrayHelper;
+
 /**
  * StoreDataTransformer
  *
@@ -48,28 +50,124 @@ final class StoreDataTransformer
     $storeData['LuminaryHeader:header-main'] = (new HeaderTransformer($this->rawData))->toDto();
 
     // Suggestions
-    if (!empty($this->rawData['suggestions'])) {
-      $storeData['LuminarySuggestions:suggestions-main'] = (new SuggestionCollectionTransformer($this->rawData['suggestions']))->toDto();
+    $suggestions = $this->getSuggestions();
+
+    if (!empty($suggestions)) {
+      $storeData['LuminarySuggestions:suggestions-main'] = (new SuggestionCollectionTransformer($suggestions))->toDto();
     }
 
     // Exceptions chain
-    if (!empty($this->rawData['exceptions'])) {
-      $storeData['LuminaryExceptionsChain:exceptions-main'] = (new ExceptionCollectionTransformer($this->rawData['exceptions']))->toDto();
+    $exceptions = $this->getExceptions();
+
+    if (!empty($exceptions)) {
+      $storeData['LuminaryExceptionsChain:exceptions-main'] = (new ExceptionCollectionTransformer($exceptions))->toDto();
     }
 
     // Tech info
-    if (!empty($this->rawData['techInfo'])) {
-      $storeData['LuminaryTechInfo:tech-info-main'] = $this->rawData['techInfo'];
+    $techInfo = ArrayHelper::getArray($this->rawData, 'techInfo', []);
+
+    if (!empty($techInfo)) {
+      $storeData['LuminaryTechInfo:tech-info-main'] = (object)$techInfo;
     }
 
     // Stack trace and all its children are now handled by one transformer
-    if (!empty($this->rawData['frames'])) {
+    $frames = $this->getFrames();
+
+    if (!empty($frames)) {
       $storeData['LuminaryStackTrace:stack-trace-main'] = (new StackTraceTransformer(
-        $this->rawData['frames'],
+        $frames,
         $this->editorConfig,
       ))->toDto();
     }
 
     return $storeData;
+  }
+
+  /**
+   * @return array<int, array{icon: string, text: string}>
+   */
+  private function getSuggestions(): array
+  {
+    $suggestions = $this->rawData['suggestions'] ?? [];
+
+    if (!is_array($suggestions)) {
+      return [];
+    }
+
+    $result = [];
+
+    foreach ($suggestions as $index => $suggestion) {
+      if (!is_array($suggestion)
+          || !isset($suggestion['icon'], $suggestion['text'])
+          || !is_string($suggestion['icon'])
+          || !is_string($suggestion['text'])) {
+        return [];
+      }
+
+      if (is_int($index)) {
+        $result[$index] = [
+          'icon' => $suggestion['icon'],
+          'text' => $suggestion['text'],
+        ];
+      }
+    }
+
+    return $result;
+  }
+
+  /**
+   * @return array<int, array<string, mixed>>
+   */
+  private function getExceptions(): array
+  {
+    $exceptions = $this->rawData['exceptions'] ?? [];
+
+    if (!is_array($exceptions)) {
+      return [];
+    }
+
+    $result = [];
+
+    foreach ($exceptions as $exception) {
+      if (!is_array($exception)) {
+        return [];
+      }
+
+      $result[] = array_filter(
+        $exception,
+        static fn ($key): bool => is_string($key),
+        ARRAY_FILTER_USE_KEY,
+      );
+    }
+
+    return $result;
+  }
+
+  /**
+   * @return array<int, array<string, mixed>>
+   */
+  private function getFrames(): array
+  {
+    $frames = $this->rawData['frames'] ?? [];
+
+    if (!is_array($frames)) {
+      return [];
+    }
+
+    $result = [];
+
+    foreach ($frames as $frame) {
+      if (!is_array($frame)) {
+        return [];
+      }
+
+      $result[] = array_filter(
+        $frame,
+        static fn ($key): bool => is_string($key),
+        ARRAY_FILTER_USE_KEY,
+      );
+    }
+
+    return $result;
   }
 }

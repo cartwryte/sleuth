@@ -37,7 +37,18 @@ final class ViewModel
    *
    * @param Throwable $e The exception to process
    *
-   * @return array<string, mixed> Complete error data for View
+   * @return array{
+   *   e: Throwable,
+   *   title: string,
+   *   headingTitle: string,
+   *   message: string,
+   *   file: string,
+   *   line: int,
+   *   exceptions: list<array{class: string, message: string, file: string, line: int}>,
+   *   frames: list<array{file: string, line: int, function: string, code: string, startLine: int, fullPath: string}>,
+   *   techInfo: array<string, mixed>,
+   *   suggestions: list<array{icon: string, text: string}>
+   * }
    */
   public function build(Throwable $e): array
   {
@@ -84,7 +95,7 @@ final class ViewModel
    *
    * @param Throwable $e The root exception
    *
-   * @return array<int, array<string, mixed>> Array of exception data
+   * @return list<array{class: string, message: string, file: string, line: int}>
    */
   private function buildExceptionChain(Throwable $e): array
   {
@@ -110,7 +121,7 @@ final class ViewModel
    *
    * @param Throwable $e The exception
    *
-   * @return array<int, array<string, mixed>> Array of frame data with code snippets
+   * @return list<array{file: string, line: int, function: string, code: string, startLine: int, fullPath: string}>
    */
   private function buildFrames(Throwable $e): array
   {
@@ -148,7 +159,7 @@ final class ViewModel
    * @param int    $line     Line number
    * @param string $function Function/method name for this frame
    *
-   * @return array<string, mixed> Frame data with highlighted code
+   * @return array{file: string, line: int, function: string, code: string, startLine: int, fullPath: string}
    */
   private function buildCodeFrame(string $file, int $line, string $function): array
   {
@@ -193,7 +204,7 @@ final class ViewModel
    *
    * @param Throwable $e The exception
    *
-   * @return array{file: string, line: int} Error location
+   * @return array{file: string, line: int}
    */
   private function determineErrorLocation(Throwable $e): array
   {
@@ -268,7 +279,7 @@ final class ViewModel
    *
    * @param Throwable $e The exception to analyze
    *
-   * @return array<int, array{icon: string, text: string}> Array of suggestions
+   * @return list<array{icon: string, text: string}>
    */
   private function buildSuggestions(Throwable $e): array
   {

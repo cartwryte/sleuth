@@ -27,7 +27,7 @@ final class SolutionAnalyzer
    *
    * @param Throwable $e
    *
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   public function analyze(Throwable $e): array
   {
@@ -86,7 +86,7 @@ final class SolutionAnalyzer
   /**
    * @param string $message
    *
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getDatabaseSuggestions(string $message): array
   {
@@ -233,7 +233,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getFileNotFoundSuggestions(): array
   {
@@ -244,7 +244,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getClassNotFoundSuggestions(): array
   {
@@ -261,7 +261,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getMemorySuggestions(): array
   {
@@ -282,7 +282,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getModelSuggestions(): array
   {
@@ -303,7 +303,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getTemplateSuggestions(): array
   {
@@ -324,7 +324,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getExtensionSuggestions(): array
   {
@@ -345,7 +345,7 @@ final class SolutionAnalyzer
   }
 
   /**
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getPermissionSuggestions(): array
   {
@@ -368,7 +368,7 @@ final class SolutionAnalyzer
   /**
    * @param string $message the full error message
    *
-   * @return array<int, array{icon: string, text: string}>
+   * @return list<array{icon: string, text: string}>
    */
   private function getUndefinedVariableSuggestions(string $message): array
   {

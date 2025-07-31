@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Transformer;
 
 use Cartwryte\Sleuth\Dto\LayoutDto;
+use Cartwryte\Sleuth\Helper\ArrayHelper;
 
 /**
  * LayoutTransformer
@@ -32,7 +33,7 @@ final class LayoutTransformer
   public function toDto(): LayoutDto
   {
     return new LayoutDto(
-      title: $this->rawData['title'] ?? 'Error | Sleuth',
+      title: ArrayHelper::getString($this->rawData, 'title', 'Error | Sleuth'),
     );
   }
 }

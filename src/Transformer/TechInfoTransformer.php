@@ -36,9 +36,24 @@ final class TechInfoTransformer
       'OpenCart Version' => defined('VERSION') ? VERSION : 'Unknown',
       'Error Time' => date('Y-m-d H:i:s'),
       'Peak Memory' => "{$memoryMb} MB / {$memoryLimit}",
-      'Request Method' => htmlspecialchars($_SERVER['REQUEST_METHOD'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
-      'Request URI' => htmlspecialchars($_SERVER['REQUEST_URI'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
-      'Server Software' => htmlspecialchars($_SERVER['SERVER_SOFTWARE'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
+      'Request Method' => htmlspecialchars($this->getServerString('REQUEST_METHOD'), ENT_QUOTES, 'UTF-8'),
+      'Request URI' => htmlspecialchars($this->getServerString('REQUEST_URI'), ENT_QUOTES, 'UTF-8'),
+      'Server Software' => htmlspecialchars($this->getServerString('SERVER_SOFTWARE'), ENT_QUOTES, 'UTF-8'),
     ];
+  }
+
+  /**
+   * Get string value from $_SERVER with fallback
+   *
+   * @param string $key
+   * @param string $default
+   *
+   * @return string
+   */
+  private function getServerString(string $key, string $default = 'Unknown'): string
+  {
+    $value = $_SERVER[$key] ?? null;
+
+    return is_string($value) ? $value : $default;
   }
 }

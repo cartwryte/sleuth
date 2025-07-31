@@ -15,6 +15,7 @@ use Cartwryte\Sleuth\Exception\OpenCartNotDetectedException;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use SplFileInfo;
 
 /**
  * Backup Manager for OpenCart Files
@@ -109,9 +110,14 @@ final class BackupManager
     );
 
     foreach ($iterator as $file) {
+      if (!$file instanceof SplFileInfo) {
+        continue;
+      }
+
       if ($file->isFile() && str_ends_with($file->getFilename(), '.backup')) {
         $relativePath = substr($file->getPathname(), strlen($this->backupDir . '/'));
         $originalPath = str_replace('.backup', '', $relativePath);
+
         $backups[] = $this->detector->getPaths()['root'] . '/' . $originalPath;
       }
     }

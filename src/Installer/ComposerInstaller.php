@@ -96,7 +96,7 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
 
   /**
    * Handles Composer post-install and post-update events.
-   * Delegates all the work to the “clean” Installer.
+   * Delegates all the work to the "clean" Installer.
    *
    * @param Event $event Composer script event
    *
@@ -108,6 +108,13 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
     $io->writeError('<info>=== Cartwryte Sleuth Installer ===</info>');
 
     $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+
+    if (!is_string($vendorDir)) {
+      $io->writeError('<error>Cannot determine vendor directory.</error>');
+
+      return;
+    }
+
     $this->configFilePath = $vendorDir . '/cartwryte/sleuth/src/config/paths.php';
 
     // Detect OpenCart root
@@ -122,7 +129,7 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
     // Save the detected path to our portable config file
     $this->savePathConfig($root, $io);
 
-    // Call the “pure” Installer
+    // Call the "pure" Installer
     try {
       $installer = new Installer();
       $report = $installer->install();
@@ -133,7 +140,7 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
     }
 
     // Render report
-    if (!empty($report['success'])) {
+    if ($report['success']) {
       $io->writeError('<info>✔ Sleuth installed successfully</info>');
     } else {
       $io->writeError('<error>✖ Sleuth installation failed</error>');
@@ -190,7 +197,7 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
       return;
     }
 
-    if (!empty($report['success'])) {
+    if ($report['success']) {
       $io->writeError('<info>✔ Sleuth uninstalled successfully</info>');
     } else {
       $io->writeError('<error>✖ Sleuth uninstallation failed</error>');
@@ -222,6 +229,11 @@ final class ComposerInstaller implements EventSubscriberInterface, PluginInterfa
   private function detectRoot(): ?string
   {
     $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+
+    if (!is_string($vendorDir)) {
+      return null;
+    }
+
     $path = realpath($vendorDir) ?: $vendorDir;
     $maxDepth = 5;
 

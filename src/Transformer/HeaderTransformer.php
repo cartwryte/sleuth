@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Transformer;
 
 use Cartwryte\Sleuth\Dto\HeaderDto;
+use Cartwryte\Sleuth\Helper\ArrayHelper;
 
 /**
  * HeaderTransformer
@@ -32,8 +33,8 @@ final class HeaderTransformer
   public function toDto(): HeaderDto
   {
     return new HeaderDto(
-      title: $this->rawData['headingTitle'] ?? 'Error',
-      message: $this->rawData['message'] ?? '',
+      title: ArrayHelper::getString($this->rawData, 'headingTitle', 'Error'),
+      message: ArrayHelper::getString($this->rawData, 'message', ''),
     );
   }
 }

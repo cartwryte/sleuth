@@ -77,7 +77,7 @@ final class HtmlRenderer implements RendererInterface
     $storeData = (new StoreDataTransformer($rawData, $this->editorConfig))->transform();
 
     $viewData = [
-      'titleEscaped' => htmlspecialchars($rawData['title'] ?? 'Error'),
+      'titleEscaped' => htmlspecialchars($rawData['title']),
       'viteAssets' => $this->getViteHelper()(['src/Frontend/js/luminary.js']),
       'storeData' => $storeData,
     ];
@@ -89,7 +89,7 @@ final class HtmlRenderer implements RendererInterface
       $this->renderTemplate($indexFile, $viewData);
     } else {
       $this->logError(new RuntimeException("Layout template not found: $indexFile"));
-      $this->renderFallback($viewData);
+      $this->renderFallback($rawData);
     }
   }
 
@@ -138,12 +138,19 @@ final class HtmlRenderer implements RendererInterface
   private function getEditorConfig(): array
   {
     $pathTo = $this->config->get('dev_editor_path_to');
+    $pathToString = is_string($pathTo) ? $pathTo : '';
 
-    $enabled = $this->config->get('dev_editor_enabled') && !empty($pathTo);
+    $enabled = $this->config->get('dev_editor_enabled') && !empty($pathToString);
+
+    $defaultEditor = $this->config->get('dev_editor_default');
+    $defaultEditorString = is_string($defaultEditor) ? $defaultEditor : 'phpstorm';
+
+    $pathFrom = $this->config->get('dev_editor_path_from');
+    $pathFromString = is_string($pathFrom) ? $pathFrom : '/var/www/';
 
     return [
       'enabled' => $enabled,
-      'defaultEditor' => $this->config->get('dev_editor_default') ?? 'phpstorm',
+      'defaultEditor' => $defaultEditorString,
       'editors' => [
         'vscode' => [
           'name' => 'Visual Studio Code',
@@ -175,8 +182,8 @@ final class HtmlRenderer implements RendererInterface
         ],
       ],
       'pathMapping' => [
-        'from' => $this->config->get('dev_editor_path_from') ?? '/var/www/',
-        'to' => $pathTo ?? '',
+        'from' => $pathFromString,
+        'to' => $pathToString,
       ],
     ];
   }
@@ -199,15 +206,24 @@ final class HtmlRenderer implements RendererInterface
   /**
    * Render fallback when the main template is not available.
    *
-   * @param array<string, mixed> $data
+   * @param array{
+   *   e: Throwable,
+   *   title: string,
+   *   headingTitle: string,
+   *   message: string,
+   *   file: string,
+   *   line: int,
+   *   exceptions: list<array{class: string, message: string, file: string, line: int}>,
+   *   frames: list<array{file: string, line: int, function: string, code: string, startLine: int, fullPath: string}>,
+   *   techInfo: array<string, mixed>,
+   *   suggestions: list<array{icon: string, text: string}>
+   * } $data
    */
   private function renderFallback(array $data): void
   {
-    $title = $data['title'] ?? ($data['headingTitle'] . ': ' . $data['message']);
-
     echo '<!DOCTYPE html>';
     echo '<html><head>';
-    echo '<title>' . htmlspecialchars($title) . '</title>';
+    echo '<title>' . htmlspecialchars($data['title']) . '</title>';
     echo '<style>
             :root {
                 --bg: oklch(97% 0.01 260);
@@ -315,19 +331,19 @@ final class HtmlRenderer implements RendererInterface
     echo '</head><body>';
 
     // Header
-    echo '<h1>' . ($data['headingTitle'] ?? 'Error') . '</h1>';
-    echo '<p>' . ($data['message'] ?? 'Unknown error') . '</p>';
+    echo '<h1>' . htmlspecialchars($data['headingTitle']) . '</h1>';
+    echo '<p>' . htmlspecialchars($data['message']) . '</p>';
 
     // Exception Chain
-    if (!empty($data['exceptions']) && count($data['exceptions']) > 1) {
+    if (count($data['exceptions']) > 1) {
       echo '<h2>Exception Chain</h2>';
 
       foreach ($data['exceptions'] as $index => $exception) {
         $isCurrent = $index === 0;
         echo '<div class="chain' . ($isCurrent ? ' current' : '') . '">';
-        echo '<strong>' . ($index + 1) . '. ' . $exception['class'] . '</strong><br>';
-        echo $exception['message'] . '<br>';
-        echo '<small>' . $exception['file'] . ':' . $exception['line'] . '</small>';
+        echo '<strong>' . ($index + 1) . '. ' . htmlspecialchars($exception['class']) . '</strong><br>';
+        echo htmlspecialchars($exception['message']) . '<br>';
+        echo '<small>' . htmlspecialchars($exception['file']) . ':' . $exception['line'] . '</small>';
         echo '</div>';
       }
     }
@@ -339,11 +355,9 @@ final class HtmlRenderer implements RendererInterface
       foreach ($data['frames'] as $index => $frame) {
         $isFirst = $index === 0;
         echo '<details' . ($isFirst ? ' open' : '') . '>';
-        echo '<summary><strong>' . $frame['file'] . ':' . $frame['line'] . ' - ' . $frame['function'] . '()</strong></summary>';
+        echo '<summary><strong>' . htmlspecialchars($frame['file']) . ':' . $frame['line'] . ' - ' . htmlspecialchars($frame['function']) . '()</strong></summary>';
 
-        if (isset($frame['codeHtml'])) {
-          echo '<div class="code-container">' . $frame['codeHtml'] . '</div>';
-        }
+        echo '<pre>' . htmlspecialchars($frame['code']) . '</pre>';
 
         echo '</details>';
       }

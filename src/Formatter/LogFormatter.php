@@ -98,12 +98,19 @@ final class LogFormatter
    */
   public static function apache(Throwable $e): string
   {
+    // Fetch the value, which could be of a mixed type.
+    $refererValue = $_SERVER['HTTP_REFERER'] ?? '-';
+
+    // Use the value only if it's a string, otherwise use a fallback.
+    // This is the safest way to handle potentially mixed types from superglobals.
+    $referer = is_string($refererValue) ? $refererValue : '-';
+
     return sprintf(
       '%s [error] %s: %s, referer: %s',
       date('[d/M/Y:H:i:s O]'),
       get_class($e),
       $e->getMessage(),
-      $_SERVER['HTTP_REFERER'] ?? '-',
+      $referer,
     );
   }
 }

@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Transformer;
 
 use Cartwryte\Sleuth\Dto\StackFrameDto;
+use Cartwryte\Sleuth\Helper\ArrayHelper;
 
 /**
  * StackFrameTransformer
@@ -43,22 +44,25 @@ final class StackFrameTransformer
   public function toDto(): StackFrameDto
   {
     $codeLines = [];
-    $rawCodeLines = explode("\n", $this->rawFrame['code'] ?? '');
-    $startLine = (int)($this->rawFrame['startLine'] ?? 1);
+    $code = ArrayHelper::getString($this->rawFrame, 'code', '');
+    $rawCodeLines = explode("\n", $code);
+    $startLine = ArrayHelper::getInt($this->rawFrame, 'startLine', 1);
 
     foreach ($rawCodeLines as $lineIndex => $rawLine) {
       $lineNumber = $startLine + $lineIndex;
-      $editorUrl = $this->generateEditorUrl($this->rawFrame['fullPath'], $lineNumber);
-      $isError = $lineNumber === (int)$this->rawFrame['line'];
+      $fullPath = ArrayHelper::getString($this->rawFrame, 'fullPath', '');
+      $editorUrl = $this->generateEditorUrl($fullPath, $lineNumber);
+      $frameLine = ArrayHelper::getInt($this->rawFrame, 'line', 0);
+      $isError = $lineNumber === $frameLine;
 
       $codeLines[] = (new CodeLineTransformer($rawLine, $lineNumber, $isError, $editorUrl))->toDto();
     }
 
     return new StackFrameDto(
       id: $this->frameId,
-      file: (string)($this->rawFrame['file'] ?? 'unknown file'),
-      line: (int)($this->rawFrame['line'] ?? 0),
-      function: (string)($this->rawFrame['function'] ?? ''),
+      file: ArrayHelper::getString($this->rawFrame, 'file', 'unknown file'),
+      line: ArrayHelper::getInt($this->rawFrame, 'line', 0),
+      function: ArrayHelper::getString($this->rawFrame, 'function', ''),
       open: $this->isOpen,
       codeLines: $codeLines,
     );

@@ -29,36 +29,39 @@ final class ResponseTypeDetector
   public static function detect(): string
   {
     // X-Requested-With: XMLHttpRequest
-    $x_requested_with = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+    $xRequestedWith = $_SERVER['HTTP_X_REQUESTED_WITH'] ?? '';
+    $xRequestedWith = is_string($xRequestedWith) ? strtolower($xRequestedWith) : '';
 
-    if ($x_requested_with === 'xmlhttprequest') {
+    if ($xRequestedWith === 'xmlhttprequest') {
       return 'json';
     }
 
     // Content-Type: application/json
-    $content_type = strtolower($_SERVER['CONTENT_TYPE'] ?? '');
+    $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+    $contentType = is_string($contentType) ? strtolower($contentType) : '';
 
-    if (str_contains($content_type, 'application/json')) {
+    if (str_contains($contentType, 'application/json')) {
       return 'json';
     }
 
     // Accept: application/json, text/html
-    $http_accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
+    $httpAccept = $_SERVER['HTTP_ACCEPT'] ?? '';
+    $httpAccept = is_string($httpAccept) ? strtolower($httpAccept) : '';
 
-    if (empty($http_accept)) {
+    if (empty($httpAccept)) {
       return 'html';
     }
 
     // Accept: application/json (without text/html)
-    if (str_contains($http_accept, 'application/json') && !str_contains($http_accept, 'text/html')) {
+    if (str_contains($httpAccept, 'application/json') && !str_contains($httpAccept, 'text/html')) {
       return 'json';
     }
 
     // Accept: application/json, text/html (JSON has higher priority)
-    $json_pos = strpos($http_accept, 'application/json');
-    $html_pos = strpos($http_accept, 'text/html');
+    $jsonPos = strpos($httpAccept, 'application/json');
+    $htmlPos = strpos($httpAccept, 'text/html');
 
-    if ($json_pos !== false && $html_pos !== false && $json_pos < $html_pos) {
+    if ($jsonPos !== false && $htmlPos !== false && $jsonPos < $htmlPos) {
       return 'json';
     }
 

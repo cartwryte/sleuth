@@ -55,13 +55,13 @@ final class JsonRenderer implements RendererInterface
     echo json_encode([
       'error' => true,
       'message' => $data['message'],
-      'type' => $data['heading_title'],
+      'type' => $data['headingTitle'],
       'file' => $data['file'],
       'line' => $data['line'],
       'exceptions' => $data['exceptions'],
       'trace' => $trace,
       'suggestions' => $suggestions,
-      'tech_info' => $data['tech_info'],
+      'tech_info' => $data['techInfo'],
     ], JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
   }
 }

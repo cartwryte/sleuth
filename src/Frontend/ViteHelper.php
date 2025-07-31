@@ -49,6 +49,8 @@ final class ViteHelper
    *
    * @param string|string[] $entrypoints
    *
+   * @throws JsonException
+   *
    * @return string the generated HTML tags
    */
   public function __invoke(array|string $entrypoints): string
@@ -72,18 +74,39 @@ final class ViteHelper
     foreach ($entrypoints as $entry) {
       $chunk = $this->chunk($manifest, $entry);
 
-      // Add the main script tag
-      $tags[$chunk['file']] = '<script type="module" src="' . $this->assetUrl($chunk['file']) . '"></script>';
+      $file = $chunk['file'] ?? null;
 
-      // Add preload links for direct imports
-      foreach ($chunk['imports'] ?? [] as $import) {
-        $preloads[$manifest[$import]['file']] = '<link rel="modulepreload" href="' . $this->assetUrl($manifest[$import]['file']) . '">';
+      if (!is_string($file)) {
+        throw new RuntimeException("Vite manifest entry '$entry' is missing a 'file' key.");
       }
 
-      // Add stylesheet links
-      foreach ($chunk['css'] ?? [] as $cssFile) {
-        $tags[$cssFile] = '<link rel="stylesheet" href="' . $this->assetUrl($cssFile) . '">';
-        $preloads[$cssFile] = '<link rel="preload" href="' . $this->assetUrl($cssFile) . '" as="style">';
+      $tags[$file] = '<script type="module" src="' . $this->assetUrl($file) . '"></script>';
+
+      $imports = $chunk['imports'] ?? [];
+
+      if (is_array($imports)) {
+        foreach ($imports as $import) {
+          if (!is_string($import) || !isset($manifest[$import]['file']) || !is_string($manifest[$import]['file'])) {
+            continue;
+          }
+
+          $importFile = $manifest[$import]['file'];
+          $preloads[$importFile] = '<link rel="modulepreload" href="' . $this->assetUrl($importFile) . '">';
+        }
+      }
+
+      // 3. Safely get stylesheets
+      $cssFiles = $chunk['css'] ?? [];
+
+      if (is_array($cssFiles)) {
+        foreach ($cssFiles as $cssFile) {
+          if (!is_string($cssFile)) {
+            continue;
+          }
+
+          $tags[$cssFile] = '<link rel="stylesheet" href="' . $this->assetUrl($cssFile) . '">';
+          $preloads[$cssFile] = '<link rel="preload" href="' . $this->assetUrl($cssFile) . '" as="style">';
+        }
       }
     }
 
@@ -125,8 +148,7 @@ final class ViteHelper
   /**
    * Reads and decodes the manifest file.
    *
-   * @throws JsonException
-   * @throws RuntimeException
+   * @throws JsonException|RuntimeException
    *
    * @return array<string, array<string, mixed>>
    */
@@ -162,7 +184,25 @@ final class ViteHelper
       throw new RuntimeException('Invalid manifest format: expected array');
     }
 
-    $this->manifest = $decoded;
+    $validatedManifest = [];
+
+    foreach ($decoded as $key => $value) {
+      if (!is_string($key)) {
+        throw new RuntimeException('Invalid manifest format: keys must be strings');
+      }
+
+      if (!is_array($value)) {
+        throw new RuntimeException("Invalid manifest format: entry '$key' must be an array");
+      }
+
+      $validatedManifest[$key] = array_filter(
+        $value,
+        static fn ($innerKey): bool => is_string($innerKey),
+        ARRAY_FILTER_USE_KEY,
+      );
+    }
+
+    $this->manifest = $validatedManifest;
 
     return $this->manifest;
   }

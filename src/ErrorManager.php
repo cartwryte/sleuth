@@ -126,7 +126,14 @@ final class ErrorManager
 
     // Redirect if display disabled
     if (!$this->config->get('error_display')) {
-      header('Location: ' . $this->config->get('error_page'));
+      $redirectUrl = $this->config->get('error_page');
+
+      if (!is_string($redirectUrl) || empty(trim($redirectUrl))) {
+        $redirectUrl = '/';
+      }
+
+      header('Location: ' . $redirectUrl);
+
       exit();
     }
 

@@ -51,11 +51,7 @@ final class Installer
   /**
    * Performs installation of Cartwryte Sleuth.
    *
-   * @return array<string,mixed> Report with:
-   *                             - success: bool
-   *                             - version: string|null
-   *                             - steps:   list<string>
-   *                             - errors:  list<string>
+   * @return array{success: bool, version: string|null, steps: list<string>, errors: list<string>}
    */
   public function install(): array
   {
@@ -68,7 +64,7 @@ final class Installer
 
     try {
       // We get the version directly. This method will throw an exception
-      // if it can't read 'index.tpl' or find the version constant inside.
+      // if it can't read 'index.php' or find the version constant inside.
       // This is a much more reliable check than is_file('.../framework.php').
       $version = $this->detector->getVersion();
       $majorVersion = $this->detector->getMajorVersion();
@@ -101,10 +97,7 @@ final class Installer
   /**
    * Performs uninstallation of Cartwryte Sleuth.
    *
-   * @return array<string,mixed> Report with:
-   *                             - success: bool
-   *                             - steps:   list<string>
-   *                             - errors:  list<string>
+   * @return array{success: bool, steps: list<string>, errors: list<string>}
    */
   public function uninstall(): array
   {
@@ -191,7 +184,7 @@ final class Installer
   /**
    * Registers Sleuth namespace in OpenCart autoloader.
    *
-   * @param array<string,mixed>& $report Reference to the report to append steps
+   * @param array{success: bool, version: string|null, steps: list<string>, errors: list<string>} $report
    *
    * @throws OpenCartNotDetectedException if registration fails
    */
@@ -213,7 +206,7 @@ final class Installer
   /**
    * Applies configuration patches to OpenCart files.
    *
-   * @param array<string,mixed>& $report Reference to the report to append steps
+   * @param array{success: bool, version: string|null, steps: list<string>, errors: list<string>} $report
    *
    * @throws OpenCartNotDetectedException if patching fails unexpectedly
    */
@@ -232,7 +225,7 @@ final class Installer
    * Adds a final step indicating that runtime error handlers
    * have been commented out (actual init happens in OpenCart bootstrap).
    *
-   * @param array<string,mixed>& $report Reference to the report to append steps
+   * @param array{success: bool, version: string|null, steps: list<string>, errors: list<string>} $report
    */
   private function initializeErrorHandler(array &$report): void
   {
@@ -242,7 +235,7 @@ final class Installer
   /**
    * Copy pre-built Luminary assets to OpenCart public directory.
    *
-   * @param array<string,mixed>& $report Reference to the report to append steps
+   * @param array{success: bool, version: string|null, steps: list<string>, errors: list<string>} $report
    */
   private function installAssets(array &$report): void
   {

@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Cartwryte\Sleuth\Transformer;
 
 use Cartwryte\Sleuth\Dto\ExceptionDto;
+use Cartwryte\Sleuth\Helper\ArrayHelper;
 
 /**
  * ExceptionTransformer
@@ -32,10 +33,10 @@ final class ExceptionTransformer
   public function toDto(): ExceptionDto
   {
     return new ExceptionDto(
-      class: (string)($this->rawException['class'] ?? 'Exception'),
-      message: (string)($this->rawException['message'] ?? ''),
-      file: (string)($this->rawException['file'] ?? 'unknown file'),
-      line: (int)($this->rawException['line'] ?? 0),
+      class: ArrayHelper::getString($this->rawException, 'class', 'Exception'),
+      message: ArrayHelper::getString($this->rawException, 'message', ''),
+      file: ArrayHelper::getString($this->rawException, 'file', 'unknown file'),
+      line: ArrayHelper::getInt($this->rawException, 'line', 0),
     );
   }
 }
